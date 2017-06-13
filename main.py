@@ -56,7 +56,10 @@ class ViewReportHandler(webapp2.RequestHandler):
     Handler to view details about a single report
     '''
     def get(self, datestring):
-        # get corresponding report from datestring, if it exists
+        '''
+        Get corresponding report from datestring, if it exists. if not, 404
+        We should allow editing of a report, which takes you to CreateReportHandler with all the info already pre-filled in
+        '''
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
