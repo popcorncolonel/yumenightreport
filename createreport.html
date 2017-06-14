@@ -1,4 +1,5 @@
 {% extends "base.html" %}
 {% block body %}
-    <b>stuff goes here to make a new report</b>
+    {% set form = True %}
+    {% include 'displayreport.html' with context %}
 {% endblock %}

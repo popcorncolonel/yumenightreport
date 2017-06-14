@@ -1,4 +1,15 @@
 {% extends "base.html" %}
 {% block body %}
-    buttons go here to create new report, view all reports, or view a single report
+    <div class="centertext">
+    {% if reports %}
+        Most recent reports: 
+        <ul>
+        {% for report in reports[:10] %}
+        <li>
+            <a href="/report/{{ report.datestring }}">{{ report.readable_datestring }}</a>
+        </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    </div>
 {% endblock %}

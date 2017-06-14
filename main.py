@@ -40,6 +40,22 @@ class Report(ndb.Model):
     money_off_by = ndb.IntegerProperty()
     positive_cycle = ndb.IntegerProperty()
 
+    @property
+    def datestring(self):
+        ''' 2017-06-13 '''
+        if self.date:
+            return self.date.strftime('%Y-%M-%D')
+        else:
+            return None
+
+    @property
+    def readable_datestring(self):
+        ''' Tuesday June 13, 2017 '''
+        if self.date:
+            return self.date.strftime('%A %b %-d, %Y')
+        else:
+            return None
+
 
 class ViewAllReportsHandler(webapp2.RequestHandler):
     '''

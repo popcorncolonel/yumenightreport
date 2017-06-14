@@ -1,4 +1,19 @@
 {% extends "base.html" %}
 {% block body %}
-    stuff goes here to view all reports. makes a graph of dreams over time?
+    {% if reports %}
+    <div class="centertext">
+        Most recent reports: 
+        <ul>
+        {% for report in reports|sort(attribute='date', reverse=True) %} {# assumes list is sorted #}
+        <li>
+            <a href="/report/{{ report.datestring }}">{{ report.readable_datestring }}</a>
+        </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div class="centertext">
+        No reports yet. Get to work!
+    </div>
+    {% endif %}
 {% endblock %}

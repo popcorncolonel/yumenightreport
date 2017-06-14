@@ -1,0 +1,22 @@
+{# lists all the relevant things either with a form or in a div, optionally #}
+{% if form %}
+<form action="/createreport" method="POST">
+</form>
+{% macro entry(type_of_data, name, value=None) -%}
+    {% if value == None %}
+    {{ type_of_data }}: <input name='{{ name }}'/>
+    {% else %}
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}'/>
+    {% endif %}
+{%- endmacro %}
+{% else %}
+    {# then the `report` variable exists #}
+{% macro entry(type_of_data, name, value) -%}
+    {{ type_of_data }}: <span name='{{ name }}'> {{ value }} </span>
+{%- endmacro %}
+{% endif %}
+
+<div>
+{{ entry('Date', 'date', '2017-06-13') }}
+</div> 
+

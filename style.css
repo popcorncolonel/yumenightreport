@@ -1,0 +1,46 @@
+body{
+    font-family: 'Open Sans', sans-serif;
+}
+
+.content {
+    border-top: 2px solid #000;
+    padding-top: 5px;
+}
+
+.parent {
+    text-align: center;
+}
+
+.navlinks {
+    padding-top: 1em;
+    padding-bottom: 1em;
+    border-top: 2px solid #000;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn {
+    padding-bottom: 10px;
+    padding-top: 10px;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.titleimg {
+    padding-bottom: 5px;
+}
+
+.centerimg {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.centertext {
+    margin-left: auto;
+    margin-right: auto;
+    width: 420px;
+    text-align: center;
+}
+
