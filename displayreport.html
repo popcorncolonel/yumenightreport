@@ -1,7 +1,5 @@
 {# lists all the relevant things either with a form or in a div, optionally #}
 {% if form %}
-<form action="/createreport" method="POST">
-</form>
 {% macro entry(type_of_data, name, value=None) -%}
     {% if value == None %}
     {{ type_of_data }}: <input name='{{ name }}'/>
@@ -11,12 +9,123 @@
 {%- endmacro %}
 {% else %}
     {# then the `report` variable exists #}
-{% macro entry(type_of_data, name, value) -%}
-    {{ type_of_data }}: <span name='{{ name }}'> {{ value }} </span>
+{% macro entry(type_of_data, name, value=None) -%}
+    {% if report[name] is iterable and not report[name] is string %}
+    <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ ', '.join(report[name]) }} </span>
+    {% else %}
+    <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ report[name] }} </span>
+    {% endif %}
 {%- endmacro %}
 {% endif %}
 
-<div>
-{{ entry('Date', 'date', '2017-06-13') }}
+{% macro hspace() -%}
+    <span style="padding-left: 40px;"> &nbsp; </span>
+{%- endmacro %}
+
+{% if form %}
+<form action="/createreport" method="POST">
+{% endif %}
+
+<div class="parent">
+    <h2 class="textcenter"> Yume Wo Katare Nightly Report </h2> 
+    {% if form %}
+    <div class="textcenter">
+    {{ entry('Date (yyyy-mm-dd)', 'date') }}
+    </div> 
+    {% else %}
+    <div class="textcenter">
+    {{ report["readable_datestring"] }}
+    </div> 
+    {% endif %}
+
+    <hr style="margin-top: 20px; margin-bottom: 20px">
+
+    <div class="textcenter">
+    {{ entry('Yearly goal', 'yeargoal', "Don't say a lot of things!") }}
+    {{ hspace() }}
+    {{ entry('Monthly goal', 'monthgoal') }}
+    </div> 
+
+    <hr style="margin-top: 20px; margin-bottom: 20px">
+
+    <div class="textcenter">
+    {{ entry('Customers today', 'customers_today') }}
+    {% if not form %}
+    {{ hspace() }}
+    {{ entry('Customers this year', 'customers_year') }}
+    {% endif %}
+    </div> 
+
+    <div class="textcenter">
+    {{ entry('Number of dreams today', 'dreams_today') }}
+    {% if not form %}
+    {{ hspace() }}
+    {{ entry('Number of dreams this year', 'dreams_year') }}
+    {% endif %}
+    </div> 
+
+    <div class="textcenter">
+    {{ entry('Number of dreamers today', 'dreamers_today') }}
+    {% if not form %}
+    {{ hspace() }}
+    {{ entry('Number of dreamers this year', 'dreamers_year') }}
+    {% endif %}
+    </div> 
+
+    <hr style="margin-top: 20px; margin-bottom: 20px">
+
+    {% if form %}
+    <div class="textcenter">
+    {{ entry('Working members (separate with comma)', 'working_members') }}
+    </div> 
+    <div class="textcenter">
+    {{ entry('Supporting members (separate with comma)', 'supporting_members') }}
+    </div> 
+    <div class="textcenter">
+    {{ entry('Visiting members (separate with comma)', 'visiting_members') }}
+    </div> 
+
+    {% else %}
+
+    <div class="textcenter">
+    {{ entry('Working members', 'working_members') }}
+    </div> 
+    <div class="textcenter">
+    {{ entry('Supporting members', 'supporting_members') }}
+    </div> 
+    <div class="textcenter">
+    {{ entry('Visiting members', 'visiting_members') }}
+    </div> 
+    {% endif %}
+
+    <hr style="margin-top: 20px; margin-bottom: 20px">
+
+    <div class="textcenter">
+    {{ entry("End time", "endtime") }}
+    {{ hspace() }}
+    {{ entry("Positive cycle", "positivecycle") }}
+    </div> 
+
+    <div class="textcenter">
+    {{ entry("Total bowls", "totalbowls") }}
+    {{ hspace() }}
+    {{ entry("Total cups", "totalcups") }}
+    </div> 
+
+    <div class="textcenter">
+    {{ entry("Chopsticks missing", "chopsticks_missing") }}
+    {{ hspace() }}
+    {{ entry("Money off by", "money_off_by") }}
+    </div> 
+    <hr style="margin-top: 20px; margin-bottom: 20px">
+
+{% if form %}
+<input type="submit" class="btn" value="Submit"/>
+{% endif %}
+
 </div> 
+
+{% if form %}
+</form>
+{% endif %}
 
