@@ -20,6 +20,10 @@ handlers:
   script: main.app
   login: admin
 
+- url: /previewreport
+  script: main.app
+  login: admin
+
 - url: /createreport
   script: main.app
   login: admin

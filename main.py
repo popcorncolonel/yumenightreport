@@ -121,6 +121,20 @@ class CreateReportHandler(webapp2.RequestHandler):
         pass
 
 
+class PreviewReportHandler(webapp2.RequestHandler):
+    '''
+    Handler to preview a report.
+        GET this endpoint to get a create report form
+        POST here to save a new one do the db
+    '''
+    def get(self):
+        template_values = {}
+        # TODO: create Report object based on self.request (using the same logic as ViewReportHandler), pass it into template_values['report']
+        template_values['report'] = None
+        template_values['preview'] = True
+        template = JINJA_ENVIRONMENT.get_template('report.html')
+        self.response.write(template.render(template_values))
+
 class MainHandler(webapp2.RequestHandler):
     '''
     Main page: Links to creating a report or viewing all reports, or view most recent report?
@@ -138,5 +152,6 @@ app = webapp2.WSGIApplication([
     (r'/reports', ViewAllReportsHandler),
     (r'/report/(\d\d\d\d-\d\d-\d\d)', ViewReportHandler),
     (r'/createreport', CreateReportHandler),
+    (r'/previewreport', PreviewReportHandler),
     (r'/', MainHandler),
 ], debug=True)

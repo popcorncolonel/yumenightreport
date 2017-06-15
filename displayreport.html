@@ -12,8 +12,14 @@
 {% macro entry(type_of_data, name, value=None) -%}
     {% if report[name] is iterable and not report[name] is string %}
     <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ ', '.join(report[name]) }} </span>
+    {% if preview %}
+    <input name='{{ name }}' value="{{ ', '.join(report[name]) }}" type="hidden"/>
+    {% endif %}
     {% else %}
     <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ report[name] }} </span>
+    {% if preview %}
+    <input name='{{ name }}' value="{{ report[name] }}" type="hidden"/>
+    {% endif %}
     {% endif %}
 {%- endmacro %}
 {% endif %}
@@ -23,6 +29,8 @@
 {%- endmacro %}
 
 {% if form %}
+<form action="/previewreport" mathod="GET">
+{% elif preview %}
 <form action="/createreport" method="POST">
 {% endif %}
 
@@ -120,7 +128,8 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
 {% if form %}
-<input type="submit" class="btn" value="Submit"/>
+<input type="submit" class="btn" value="Preview" formaction="/previewreport" formmethod="get"/>
+<input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% endif %}
 
 </div> 
