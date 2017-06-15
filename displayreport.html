@@ -10,16 +10,9 @@
 {% else %}
     {# then the `report` variable exists #}
 {% macro entry(type_of_data, name, value=None) -%}
-    {% if report[name] is iterable and not report[name] is string %}
-    <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ ', '.join(report[name]) }} </span>
-    {% if preview %}
-    <input name='{{ name }}' value="{{ ', '.join(report[name]) }}" type="hidden"/>
-    {% endif %}
-    {% else %}
     <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ report[name] }} </span>
     {% if preview %}
     <input name='{{ name }}' value="{{ report[name] }}" type="hidden"/>
-    {% endif %}
     {% endif %}
 {%- endmacro %}
 {% endif %}
@@ -74,26 +67,9 @@
 
     <div class="textcenter">
     {{ entry('Number of dreamers today', 'num_dreamers') }}
-    {% if not form %}
-    {{ hspace() }}
-    {{ entry('Number of dreamers this year', 'dreamers_year') }}
-    {% endif %}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
-
-    {% if form %}
-    <div class="textcenter">
-    {{ entry('Working members (separate with comma)', 'working_members') }}
-    </div> 
-    <div class="textcenter">
-    {{ entry('Supporting members (separate with comma)', 'supporting_members') }}
-    </div> 
-    <div class="textcenter">
-    {{ entry('Visiting members (separate with comma)', 'visiting_members') }}
-    </div> 
-
-    {% else %}
 
     <div class="textcenter">
     {{ entry('Working members', 'working_members') }}
@@ -104,7 +80,6 @@
     <div class="textcenter">
     {{ entry('Visiting members', 'visiting_members') }}
     </div> 
-    {% endif %}
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
