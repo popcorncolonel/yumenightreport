@@ -83,6 +83,29 @@ class ViewReportHandler(webapp2.RequestHandler):
         '''
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('report.html')
+        """  #  FOR TESTING
+        report = {
+            'readable_datestring': 'Tuesday June 13, 2017',
+            'yeargoal': 'Dont say a lot of things',
+            'monthgoal': '???',
+            'customers_today': 69,
+            'customers_year': 420,
+            'dreams_today': 50,
+            'dreams_year': 50000,
+            'dreamers_today': 20,
+            'dreamers_year': 300,
+            'working_members': ['jake', 'dan', 'naomi'],
+            'supporting_members': ['makoto'],
+            'visiting_members': ['eric'],
+            'endtime': '11:15',
+            'positivecycle': 60,
+            'totalbowls': 50,
+            'totalcups': 40,
+            'chopsticks_missing': 30,
+            'money_off_by': 20,
+        }
+        template_values['report'] = report
+        """
         self.response.write(template.render(template_values))
 
 
@@ -146,6 +169,20 @@ class CreateReportHandler(webapp2.RequestHandler):
         new_report.put()
 
 
+class PreviewReportHandler(webapp2.RequestHandler):
+    '''
+    Handler to preview a report.
+        GET this endpoint to get a create report form
+        POST here to save a new one do the db
+    '''
+    def get(self):
+        template_values = {}
+        # TODO: create Report object based on self.request (using the same logic as ViewReportHandler), pass it into template_values['report']
+        template_values['report'] = None
+        template_values['preview'] = True
+        template = JINJA_ENVIRONMENT.get_template('report.html')
+        self.response.write(template.render(template_values))
+
 class MainHandler(webapp2.RequestHandler):
     '''
     Main page: Links to creating a report or viewing all reports, or view most recent report?
@@ -163,5 +200,6 @@ app = webapp2.WSGIApplication([
     (r'/reports', ViewAllReportsHandler),
     (r'/report/(\d\d\d\d-\d\d-\d\d)', ViewReportHandler),
     (r'/createreport', CreateReportHandler),
+    (r'/previewreport', PreviewReportHandler),
     (r'/', MainHandler),
 ], debug=True)

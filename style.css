@@ -1,5 +1,6 @@
 body{
     font-family: 'Open Sans', sans-serif;
+    height: 100%;
 }
 
 .content {
@@ -21,6 +22,7 @@ body{
 }
 
 .btn {
+    font-family: 'Open Sans', sans-serif;
     padding-bottom: 10px;
     padding-top: 10px;
     padding-right: 15px;
