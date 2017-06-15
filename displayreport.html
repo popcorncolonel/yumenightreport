@@ -49,15 +49,15 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Yearly goal', 'yeargoal', "Don't say a lot of things!") }}
+    {{ entry('Yearly goal', 'year_goal', "Don't say a lot of things!") }}
     {{ hspace() }}
-    {{ entry('Monthly goal', 'monthgoal') }}
+    {{ entry('Monthly goal', 'month_goal') }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Customers today', 'customers_today') }}
+    {{ entry('Customers today', 'num_cust_today') }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Customers this year', 'customers_year') }}
@@ -65,7 +65,7 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreams today', 'dreams_today') }}
+    {{ entry('Number of dreams today', 'num_dreams') }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Number of dreams this year', 'dreams_year') }}
@@ -73,7 +73,7 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreamers today', 'dreamers_today') }}
+    {{ entry('Number of dreamers today', 'num_dreamers') }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Number of dreamers this year', 'dreamers_year') }}
@@ -109,15 +109,15 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry("End time", "endtime") }}
+    {{ entry("End time", "end_time") }}
     {{ hspace() }}
-    {{ entry("Positive cycle", "positivecycle") }}
+    {{ entry("Positive cycle", "pos_cycle") }}
     </div> 
 
     <div class="textcenter">
-    {{ entry("Total bowls", "totalbowls") }}
+    {{ entry("Total bowls", "total_bowls") }}
     {{ hspace() }}
-    {{ entry("Total cups", "totalcups") }}
+    {{ entry("Total cups", "total_cups") }}
     </div> 
 
     <div class="textcenter">

@@ -83,29 +83,32 @@ class ViewReportHandler(webapp2.RequestHandler):
         '''
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('report.html')
-        """  #  FOR TESTING
+        key = ndb.Key(Report, datestring)
+        curr_report = key.get()
+        key = ndb.Key(GlobalStats, "global_stats")
+        curr_global_stats = key.get()
+
         report = {
             'readable_datestring': 'Tuesday June 13, 2017',
-            'yeargoal': 'Dont say a lot of things',
-            'monthgoal': '???',
-            'customers_today': 69,
-            'customers_year': 420,
-            'dreams_today': 50,
-            'dreams_year': 50000,
-            'dreamers_today': 20,
-            'dreamers_year': 300,
-            'working_members': ['jake', 'dan', 'naomi'],
-            'supporting_members': ['makoto'],
-            'visiting_members': ['eric'],
-            'endtime': '11:15',
-            'positivecycle': 60,
-            'totalbowls': 50,
-            'totalcups': 40,
-            'chopsticks_missing': 30,
-            'money_off_by': 20,
+            'year_goal': curr_global_stats.year_goal,
+            'month_goal': curr_global_stats.month_goal,
+            'customers_today': curr_report.num_customers_today,
+            'customers_year': curr_global_stats.num_customers_this_year,
+            'dreams_today': curr_report.num_dreamers,
+            'dreams_year': curr_global_stats.num_dreams_this_year,
+            'dreamers_today': curr_report.num_dreamers,
+            'working_members': curr_report.working_members,
+            'supporting_members': curr_report.supporting_members,
+            'visiting_members': curr_report.visiting_members,
+            'end_time': curr_report.end_time,
+            'pos_cycle': curr_report.positive_cycle,
+            'total_bowls': curr_report.total_cups,
+            'total_cups': curr_report.total_cups,
+            'chopsticks_missing': curr_report.chopsticks_missing,
+            'money_off_by': curr_report.money_off_by,
         }
         template_values['report'] = report
-        """
+        
         self.response.write(template.render(template_values))
 
 
@@ -128,6 +131,12 @@ class CreateReportHandler(webapp2.RequestHandler):
         num_customers_today = int(self.request.get('num_cust_today'))
         num_dreamers = int(self.request.get('num_dreamers'))
         num_dreams = int(self.request.get('num_dreams'))
+        global_stats = GlobalStats(id="global_stats",
+                                    num_customers_this_year=19636,
+                                    num_dreams_this_year=18000,
+                                    daily_dream_goal=180,
+                                    year_goal = "say less things")
+        global_stats.put()
         
         # calculate this
         # add to total number of dreams this year
@@ -167,6 +176,8 @@ class CreateReportHandler(webapp2.RequestHandler):
                             positive_cycle=positive_cycle,
                             achievement_rate=achievement_rate)
         new_report.put()
+        report_page = '/report/' + date
+        self.redirect(report_page)
 
 
 class PreviewReportHandler(webapp2.RequestHandler):
