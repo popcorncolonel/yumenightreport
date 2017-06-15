@@ -3,6 +3,7 @@ import jinja2
 import os
 
 from google.appengine.ext import ndb
+from datetime import datetime
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -27,18 +28,22 @@ class Report(ndb.Model):
     Information for the daily report
     '''
     date = ndb.DateTimeProperty()
-
     month_goal = ndb.StringProperty()
-
-    num_customers = ndb.IntegerProperty()
+    num_customers_today = ndb.IntegerProperty()
     num_dreamers = ndb.IntegerProperty()
     num_dreams = ndb.IntegerProperty()
-    end_time = ndb.IntegerProperty()
+       
+    working_members = ndb.StringProperty()
+    supporting_members = ndb.StringProperty()
+    visiting_members = ndb.StringProperty()
+    end_time = ndb.TimeProperty()
     total_bowls = ndb.IntegerProperty()
     total_cups = ndb.IntegerProperty()
     chopsticks_missing = ndb.IntegerProperty()
     money_off_by = ndb.IntegerProperty()
     positive_cycle = ndb.IntegerProperty()
+    achievement_rate = ndb.FloatProperty()
+
 
     @property
     def datestring(self):
@@ -95,7 +100,50 @@ class CreateReportHandler(webapp2.RequestHandler):
     def post(self):
         # get stuff from POST request
         # create a new Report object and save it to ndb
-        pass
+        date = self.request.get('date')
+        month_goal = self.request.get('month_goal')
+        num_customers_today = int(self.request.get('num_cust_today'))
+        num_dreamers = int(self.request.get('num_dreamers'))
+        num_dreams = int(self.request.get('num_dreams'))
+        
+        # calculate this
+        # add to total number of dreams this year
+        working_members = self.request.get('working_members')
+        supporting_members = self.request.get('supporting_members')
+        visiting_members = self.request.get('visiting_members')
+        end_time = self.request.get('end_time')
+        total_bowls = int(self.request.get('total_bowls'))
+        total_cups = int(self.request.get('total_cups'))
+        chopsticks_missing = int(self.request.get('chopsticks_missing'))
+        money_off_by = int(self.request.get('money_off_by'))
+        positive_cycle = int(self.request.get('pos_cycle'))
+        
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        end_time_obj = datetime.strptime(end_time, '%H:%M').time()
+        key = ndb.Key(GlobalStats, "global_stats")
+        curr_global_stats = key.get()
+        curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year +  num_customers_today
+        curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year + num_dreams
+        curr_global_stats.put()
+        achievement_rate = (num_dreams/float(curr_global_stats.daily_dream_goal)) * 100
+
+        new_report = Report(date=date_obj,
+                            id=date, 
+                            month_goal=month_goal,
+                            num_customers_today=num_customers_today,
+                            num_dreamers=num_dreamers,
+                            num_dreams=num_dreams,
+                            working_members=working_members,
+                            supporting_members=supporting_members,
+                            visiting_members=visiting_members,
+                            end_time=end_time_obj,
+                            total_bowls=total_bowls,
+                            total_cups=total_cups,
+                            chopsticks_missing=chopsticks_missing,
+                            money_off_by=money_off_by,
+                            positive_cycle=positive_cycle,
+                            achievement_rate=achievement_rate)
+        new_report.put()
 
 
 class MainHandler(webapp2.RequestHandler):
