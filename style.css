@@ -46,3 +46,7 @@ body{
     text-align: center;
 }
 
+input.longtextbox {
+    width: 20em;
+}
+

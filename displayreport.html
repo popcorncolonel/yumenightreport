@@ -1,19 +1,19 @@
 {# lists all the relevant things either with a form or in a div, optionally #}
 {% if form %}
-{% macro entry(type_of_data, name, value=None) -%}
+{% macro entry(type_of_data, name, value=None, class="") -%}
     {% if report %}
     {% if name in report %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}'/>
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}'/>
     {% endif %}
     {% elif value == None %}
-    {{ type_of_data }}: <input name='{{ name }}'/>
+    {{ type_of_data }}: <input name='{{ name }}' class='{{ class }}'/>
     {% else %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}'/>
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}' class='{{ class }}'/>
     {% endif %}
 {%- endmacro %}
 {% else %}
     {# then the `report` variable exists #}
-{% macro entry(type_of_data, name, value=None) -%}
+{% macro entry(type_of_data, name, value=None, class="") -%}
     <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ report[name] }} </span>
     {% if preview %}
     <input name='{{ name }}' value="{{ report[name] }}" type="hidden"/>
@@ -76,13 +76,13 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Working members', 'working_members') }}
+    {{ entry('Working members', 'working_members', class="longtextbox") }}
     </div> 
     <div class="textcenter">
-    {{ entry('Supporting members', 'supporting_members') }}
+    {{ entry('Supporting members', 'supporting_members', class="longtextbox") }}
     </div> 
     <div class="textcenter">
-    {{ entry('Visiting members', 'visiting_members') }}
+    {{ entry('Visiting members', 'visiting_members', class="longtextbox") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -103,6 +103,12 @@
     {{ entry("Chopsticks missing", "chopsticks_missing") }}
     {{ hspace() }}
     {{ entry("Money off by", "money_off_by") }}
+    </div> 
+
+    <hr style="margin-top: 20px; margin-bottom: 20px">
+
+    <div class="textcenter">
+    {{ entry("Misc notes", "misc_notes", class="longtextbox") }}
     </div> 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
