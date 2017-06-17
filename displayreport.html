@@ -1,7 +1,11 @@
 {# lists all the relevant things either with a form or in a div, optionally #}
 {% if form %}
 {% macro entry(type_of_data, name, value=None) -%}
-    {% if value == None %}
+    {% if report %}
+    {% if name in report %}
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}'/>
+    {% endif %}
+    {% elif value == None %}
     {{ type_of_data }}: <input name='{{ name }}'/>
     {% else %}
     {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}'/>
@@ -22,7 +26,7 @@
 {%- endmacro %}
 
 {% if form %}
-<form action="/previewreport" mathod="GET">
+<form action="/previewreport" method="GET">
 {% elif preview %}
 <form action="/createreport" method="POST">
 {% endif %}
@@ -104,6 +108,9 @@
 
 {% if form %}
 <input type="submit" class="btn" value="Preview" formaction="/previewreport" formmethod="get"/>
+<input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
+{% elif preview %}
+<input type="submit" class="btn" value="Edit" formaction="/createreport" formmethod="get"/>
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% endif %}
 

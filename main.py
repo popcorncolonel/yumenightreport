@@ -93,35 +93,103 @@ class ViewReportHandler(webapp2.RequestHandler):
         if curr_report is None:
             raise endpoints.NotFoundException("No report found for {}".format(datestring))
 
-        stats_key = ndb.Key(GlobalStats, "global_stats")
-        curr_global_stats = stats_key.get()
+        report_dict = create_report_dict_from_report_obj(curr_report)
 
-        report = {
-            'year_goal': curr_global_stats.year_goal,
-            'customers_year': curr_global_stats.num_customers_this_year,
-            'dreams_year': curr_global_stats.num_dreams_this_year,
-
-            'month_goal': curr_report.month_goal,
-            'readable_datestring': curr_report.readable_datestring,
-            'num_cust_today': curr_report.num_customers_today,
-            'num_dreams': curr_report.num_dreams,
-            'num_dreamers': curr_report.num_dreamers,
-            'working_members': curr_report.working_members,
-            'supporting_members': curr_report.supporting_members,
-            'visiting_members': curr_report.visiting_members,
-            'end_time': curr_report.end_time.strftime('%H:%Mpm'),
-            'pos_cycle': curr_report.positive_cycle,
-            'total_bowls': curr_report.total_cups,
-            'total_cups': curr_report.total_bowls,
-            'chopsticks_missing': curr_report.chopsticks_missing,
-            'money_off_by': curr_report.money_off_by,
-        }
-        template_values['report'] = report
+        template_values['report'] = report_dict
         today_datetime = datetime.now()
         template_values['today_datestring'] = today_datetime.strftime('%Y-%m-%d')
         
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
+
+
+def get_report_from_request(request, update_global_stats=True):
+    # TODO: more robust error checking. clientside so they can edit the fields without losing data?
+    try:
+        date = request.get('date')
+        month_goal = request.get('month_goal')
+        num_customers_today = int(request.get('num_cust_today'))
+        num_dreamers = int(request.get('num_dreamers'))
+        num_dreams = int(request.get('num_dreams'))
+        working_members = request.get('working_members')
+        supporting_members = request.get('supporting_members')
+        visiting_members = request.get('visiting_members')
+        end_time = request.get('end_time')
+        total_bowls = int(request.get('total_bowls'))
+        total_cups = int(request.get('total_cups'))
+        chopsticks_missing = int(request.get('chopsticks_missing'))
+        money_off_by = int(request.get('money_off_by'))
+        positive_cycle = int(request.get('pos_cycle'))
+    
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        if ':' in end_time:
+            end_time_obj = datetime.strptime(end_time, '%H:%M').time()  # deal w/ am/pm?
+        else:
+            end_time_obj = datetime.strptime(end_time, '%H%M').time()  # deal w/ am/pm?
+    except ValueError:
+        return None  # not all required params were there
+
+    global_stats_key = ndb.Key(GlobalStats, "global_stats")
+    curr_global_stats = global_stats_key.get()
+
+    old_report_key = ndb.Key(Report, date)
+    old_report = old_report_key.get()
+    if old_report is None and update_global_stats:
+        curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year + num_customers_today
+        curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year + num_dreams
+        curr_global_stats.put()
+    else:
+        #raise endpoints.BadRequestException("Report already exists for {} (TODO: allow for re-uploading of dates)".format(date))
+        pass
+        
+    achievement_rate = (num_dreams / float(curr_global_stats.daily_dream_goal)) * 100
+
+    report = Report(
+        id=date, 
+        date=date_obj, 
+        month_goal=month_goal,
+        num_customers_today=num_customers_today,
+        num_dreamers=num_dreamers,
+        num_dreams=num_dreams,
+        working_members=working_members,
+        supporting_members=supporting_members,
+        visiting_members=visiting_members,
+        end_time=end_time_obj,
+        total_bowls=total_bowls,
+        total_cups=total_cups,
+        chopsticks_missing=chopsticks_missing,
+        money_off_by=money_off_by,
+        positive_cycle=positive_cycle,
+        achievement_rate=achievement_rate,
+    )
+    return report
+
+
+def create_report_dict_from_report_obj(curr_report):
+    stats_key = ndb.Key(GlobalStats, "global_stats")
+    curr_global_stats = stats_key.get()
+
+    report_dict = {
+        'year_goal': curr_global_stats.year_goal,
+        'customers_year': curr_global_stats.num_customers_this_year,
+        'dreams_year': curr_global_stats.num_dreams_this_year,
+
+        'month_goal': curr_report.month_goal,
+        'readable_datestring': curr_report.readable_datestring,
+        'num_cust_today': curr_report.num_customers_today,
+        'num_dreams': curr_report.num_dreams,
+        'num_dreamers': curr_report.num_dreamers,
+        'working_members': curr_report.working_members,
+        'supporting_members': curr_report.supporting_members,
+        'visiting_members': curr_report.visiting_members,
+        'end_time': curr_report.end_time.strftime('%H:%Mpm'),
+        'pos_cycle': curr_report.positive_cycle,
+        'total_bowls': curr_report.total_cups,
+        'total_cups': curr_report.total_bowls,
+        'chopsticks_missing': curr_report.chopsticks_missing,
+        'money_off_by': curr_report.money_off_by,
+    }
+    return report_dict
 
 
 class CreateReportHandler(webapp2.RequestHandler):
@@ -133,6 +201,10 @@ class CreateReportHandler(webapp2.RequestHandler):
     def get(self):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('createreport.html')
+        curr_report = get_report_from_request(self.request, update_global_stats=False)
+        if curr_report is not None:
+            report_dict = create_report_dict_from_report_obj(curr_report)
+            template_values['report'] = report_dict
         self.response.write(template.render(template_values))
 
     def initialize_global_stats(
@@ -152,59 +224,7 @@ class CreateReportHandler(webapp2.RequestHandler):
     def post(self):
         # get stuff from POST request
         # create a new Report object and save it to ndb
-        date = self.request.get('date')
-        month_goal = self.request.get('month_goal')
-        num_customers_today = int(self.request.get('num_cust_today'))
-        num_dreamers = int(self.request.get('num_dreamers'))
-        num_dreams = int(self.request.get('num_dreams'))
-        working_members = self.request.get('working_members')
-        supporting_members = self.request.get('supporting_members')
-        visiting_members = self.request.get('visiting_members')
-        end_time = self.request.get('end_time')
-        total_bowls = int(self.request.get('total_bowls'))
-        total_cups = int(self.request.get('total_cups'))
-        chopsticks_missing = int(self.request.get('chopsticks_missing'))
-        money_off_by = int(self.request.get('money_off_by'))
-        positive_cycle = int(self.request.get('pos_cycle'))
-        
-        date_obj = datetime.strptime(date, '%Y-%m-%d')
-        if ':' in end_time:
-            end_time_obj = datetime.strptime(end_time, '%H:%M').time()  # deal w/ am/pm?
-        else:
-            end_time_obj = datetime.strptime(end_time, '%H%M').time()  # deal w/ am/pm?
-
-        global_stats_key = ndb.Key(GlobalStats, "global_stats")
-        curr_global_stats = global_stats_key.get()
-
-        old_report_key = ndb.Key(Report, date)
-        old_report = old_report_key.get()
-        if old_report is None:
-            curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year + num_customers_today
-            curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year + num_dreams
-            curr_global_stats.put()
-        else:
-            raise endpoints.BadRequestException("Report already exists for {} (TODO: allow for re-uploading of dates)".format(date))
-            
-        achievement_rate = (num_dreams / float(curr_global_stats.daily_dream_goal)) * 100
-
-        new_report = Report(
-            id=date, 
-            date=date_obj, 
-            month_goal=month_goal,
-            num_customers_today=num_customers_today,
-            num_dreamers=num_dreamers,
-            num_dreams=num_dreams,
-            working_members=working_members,
-            supporting_members=supporting_members,
-            visiting_members=visiting_members,
-            end_time=end_time_obj,
-            total_bowls=total_bowls,
-            total_cups=total_cups,
-            chopsticks_missing=chopsticks_missing,
-            money_off_by=money_off_by,
-            positive_cycle=positive_cycle,
-            achievement_rate=achievement_rate,
-        )
+        new_report = get_report_from_request(self.request)
         new_report.put()
         report_page = '/report/' + date
         self.redirect(report_page)
@@ -218,8 +238,11 @@ class PreviewReportHandler(webapp2.RequestHandler):
     '''
     def get(self):
         template_values = {}
-        # TODO: create Report object based on self.request (using the same logic as ViewReportHandler), pass it into template_values['report']
-        template_values['report'] = None
+        # create Report object based on self.request (using the same logic as ViewReportHandler), pass it into template_values['report']
+        curr_report = get_report_from_request(self.request, update_global_stats=False)
+
+        report_dict = create_report_dict_from_report_obj(curr_report)
+        template_values['report'] = report_dict
         template_values['preview'] = True
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
