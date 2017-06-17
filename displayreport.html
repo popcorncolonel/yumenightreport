@@ -1,19 +1,19 @@
 {# lists all the relevant things either with a form or in a div, optionally #}
 {% if form %}
-{% macro entry(type_of_data, name, value=None, class="") -%}
+{% macro entry(type_of_data, name, value=None, class="", type="text") -%}
     {% if report %}
     {% if name in report %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}'/>
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
     {% elif value == None %}
-    {{ type_of_data }}: <input name='{{ name }}' class='{{ class }}'/>
+    {{ type_of_data }}: <input name='{{ name }}' class='{{ class }}' type='{{ type }}'/>
     {% else %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}' class='{{ class }}'/>
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
 {%- endmacro %}
 {% else %}
     {# then the `report` variable exists #}
-{% macro entry(type_of_data, name, value=None, class="") -%}
+{% macro entry(type_of_data, name, value=None, class="", type="text") -%}
     <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ report[name] }} </span>
     {% if preview %}
     <input name='{{ name }}' value="{{ report[name] }}" type="hidden"/>
@@ -54,7 +54,7 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Customers today', 'num_cust_today') }}
+    {{ entry('Customers today', 'num_cust_today', type="number") }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Customers this year', 'customers_year') }}
@@ -62,7 +62,7 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreams today', 'num_dreams') }}
+    {{ entry('Number of dreams today', 'num_dreams', type="number") }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Number of dreams this year', 'dreams_year') }}
@@ -70,7 +70,7 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreamers today', 'num_dreamers') }}
+    {{ entry('Number of dreamers today', 'num_dreamers', type="number") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -90,19 +90,19 @@
     <div class="textcenter">
     {{ entry("End time", "end_time") }}
     {{ hspace() }}
-    {{ entry("Positive cycle", "pos_cycle") }}
+    {{ entry("Positive cycle", "pos_cycle", type="number") }}
     </div> 
 
     <div class="textcenter">
-    {{ entry("Total bowls", "total_bowls") }}
+    {{ entry("Total bowls", "total_bowls", type="number") }}
     {{ hspace() }}
-    {{ entry("Total cups", "total_cups") }}
+    {{ entry("Total cups", "total_cups", type="number") }}
     </div> 
 
     <div class="textcenter">
-    {{ entry("Chopsticks missing", "chopsticks_missing") }}
+    {{ entry("Chopsticks missing", "chopsticks_missing", type="number") }}
     {{ hspace() }}
-    {{ entry("Money off by", "money_off_by") }}
+    {{ entry("Money off by", "money_off_by", type="number") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
