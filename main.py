@@ -34,6 +34,12 @@ class Report(ndb.Model):
     num_dreamers = ndb.IntegerProperty()
     num_dreams = ndb.IntegerProperty()
        
+    """ Global stats snapshot """
+    year_goal = ndb.StringProperty()
+    num_customers_this_year = ndb.IntegerProperty()
+    num_dreams_this_year = ndb.IntegerProperty()
+    daily_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
+
     working_members = ndb.StringProperty()
     supporting_members = ndb.StringProperty()
     visiting_members = ndb.StringProperty()
@@ -103,12 +109,19 @@ class ViewReportHandler(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 
+def get_integer_input(request, key):
+    val = request.get(key, None)
+    if val is not None:
+        val = int(num_customers_today)
+    return val
+
+
 def get_report_from_request(request, update_global_stats=True):
     # TODO: more robust error checking. clientside so they can edit the fields without losing data?
     try:
         date = request.get('date')
         month_goal = request.get('month_goal')
-        num_customers_today = int(request.get('num_cust_today'))
+        num_customers_today = get_integer_input(request, 'num_cust_today')
         num_dreamers = int(request.get('num_dreamers'))
         num_dreams = int(request.get('num_dreams'))
         working_members = request.get('working_members')
