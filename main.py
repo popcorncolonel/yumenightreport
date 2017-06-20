@@ -112,8 +112,9 @@ class ViewReportHandler(webapp2.RequestHandler):
 def get_integer_input(request, key):
     val = request.get(key, None)
     if val is not None:
-        val = int(num_customers_today)
-    return val
+        int_val = int(val)
+    return int_val
+
 
 
 def get_report_from_request(request, update_global_stats=True):
@@ -122,17 +123,17 @@ def get_report_from_request(request, update_global_stats=True):
         date = request.get('date')
         month_goal = request.get('month_goal')
         num_customers_today = get_integer_input(request, 'num_cust_today')
-        num_dreamers = int(request.get('num_dreamers'))
-        num_dreams = int(request.get('num_dreams'))
+        num_dreamers = get_integer_input(request, 'num_dreamers')
+        num_dreams = get_integer_input(request, 'num_dreams')
         working_members = request.get('working_members')
         supporting_members = request.get('supporting_members')
         visiting_members = request.get('visiting_members')
         end_time = request.get('end_time')
-        total_bowls = int(request.get('total_bowls'))
-        total_cups = int(request.get('total_cups'))
-        chopsticks_missing = int(request.get('chopsticks_missing'))
-        money_off_by = int(request.get('money_off_by'))
-        positive_cycle = int(request.get('pos_cycle'))
+        total_bowls = get_integer_input(request, 'total_bowls')
+        total_cups = get_integer_input(request, 'total_cups')
+        chopsticks_missing = get_integer_input(request,'chopsticks_missing')
+        money_off_by = get_integer_input(request, 'money_off_by')
+        positive_cycle = get_integer_input(request, 'pos_cycle')
     
         date_obj = datetime.strptime(date, '%Y-%m-%d')
         if ':' in end_time:
@@ -156,6 +157,9 @@ def get_report_from_request(request, update_global_stats=True):
         pass
         
     achievement_rate = (num_dreams / float(curr_global_stats.daily_dream_goal)) * 100
+    num_dreams_this_year = curr_global_stats.num_dreams_this_year
+    num_customers_this_year = curr_global_stats.num_customers_this_year
+    year_goal = curr_global_stats.year_goal
 
     report = Report(
         id=date, 
@@ -174,18 +178,19 @@ def get_report_from_request(request, update_global_stats=True):
         money_off_by=money_off_by,
         positive_cycle=positive_cycle,
         achievement_rate=achievement_rate,
+        num_customers_this_year=num_customers_this_year,
+        num_dreams_this_year=num_customers_this_year,
+        year_goal=year_goal
     )
     return report
 
 
 def create_report_dict_from_report_obj(curr_report):
-    stats_key = ndb.Key(GlobalStats, "global_stats")
-    curr_global_stats = stats_key.get()
 
     report_dict = {
-        'year_goal': curr_global_stats.year_goal,
-        'customers_year': curr_global_stats.num_customers_this_year,
-        'dreams_year': curr_global_stats.num_dreams_this_year,
+        'year_goal': curr_report.year_goal,
+        'customers_year': curr_report.num_customers_this_year,
+        'dreams_year': curr_report.num_dreams_this_year,
 
         'month_goal': curr_report.month_goal,
         'readable_datestring': curr_report.readable_datestring,
