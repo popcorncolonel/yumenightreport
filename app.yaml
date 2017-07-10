@@ -12,6 +12,10 @@ handlers:
   static_files: style.css
   upload: style.css
 
+- url: /jquery-3.2.1.min.js
+  static_files: jquery-3.2.1.min.js
+  upload: jquery-3.2.1.min.js
+
 - url: /
   script: main.app
   login: admin

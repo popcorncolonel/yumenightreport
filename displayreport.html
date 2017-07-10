@@ -4,6 +4,8 @@
     {% if report %}
     {% if name in report %}
     {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}' type='{{ type }}'/>
+    {% else %}
+    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
     {% elif value == None %}
     {{ type_of_data }}: <input name='{{ name }}' class='{{ class }}' type='{{ type }}'/>
@@ -35,7 +37,7 @@
     <h2 class="textcenter"> Yume Wo Katare Nightly Report </h2> 
     {% if form %}
     <div class="textcenter">
-    {{ entry('Date (yyyy-mm-dd)', 'date') }}
+    {{ entry('Date (yyyy-mm-dd)', 'date', value=report['datestring']) }}
     </div> 
     {% else %}
     <div class="textcenter">
@@ -88,7 +90,11 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
+    {% if form %}
+    {{ entry("End time (hh:mm)", 'end_time') }}
+    {% else %}
     {{ entry("End time", "end_time") }}
+    {% endif %}
     {{ hspace() }}
     {{ entry("Positive cycle", "pos_cycle", type="number") }}
     </div> 
@@ -112,15 +118,86 @@
     </div> 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
+{% if not form %}
+<a href="/createreport?date={{ report['datestring'] }}">
+<input type="button" class="btn" value="Edit">
+</a>
+{% endif %}
 {% if form %}
 <input type="submit" class="btn" value="Preview" formaction="/previewreport" formmethod="get"/>
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% elif preview %}
-<input type="submit" class="btn" value="Edit" formaction="/createreport" formmethod="get"/>
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% endif %}
 
 </div> 
+
+{% if form %}
+<script>
+
+function validateEntry(name, regex) {
+    /*
+    looks for the input with `name`, and if it doesn't match the right regex,
+    highlights it in red and return false
+    otherwise return true
+    */
+    var input = $('input[name='+name+']')[0];
+    if (!input) {
+        console.log('no input named '+name);
+        return true;
+    }
+    var valid = regex.test(input.value);
+    if (!valid) {
+        $(input).css({'border-color': 'red'});
+        return false;
+    } else {
+        $(input).css({'border-color': ''});
+        return true;
+    }
+}
+
+function validateAllEntries() {
+    var regexes = {
+        'date': /^\d\d\d\d-\d\d-\d\d$/,
+        'year_goal': /^\S+$/,
+        'month_goal': /^\S+$/,
+
+        'num_cust_today': /^\d+$/,
+        'num_dreams': /^\d+$/,
+        'num_dreamers': /^\d+$/,
+
+        'working_members': /^\S+$/,
+        'supporting_members': /^\S+$/,
+        'visiting_members': /^\S+$/,
+
+        'end_time': /^(\d\d:\d\d)|(\d\d\d\d)$/,
+        'total_bowls': /^\d+$/,
+        'chopsticks_missing': /^\d+$/,
+        'pos_cycle': /^\d+$/,
+        'total_cups': /^\d+$/,
+        'money_off_by': /^\d+$/,
+
+        'misc_notes': /^\S*$/,
+    }
+    var allValid = true;
+    for (var name in regexes) {
+        var regex = regexes[name];
+        var valid = validateEntry(name, regex);
+        allValid = allValid && valid;
+    }
+    console.log('here');
+    if (allValid) {
+        return true;
+    } else {
+        alert("Detected invalid entry.\n\nPlease enter the correct information in the boxes highlighted in red, and resubmit.");
+        return false;
+    }
+}
+
+// if we return false, the form won't be submitted
+$("form").submit(validateAllEntries);
+</script>
+{% endif %}
 
 {% if form %}
 </form>

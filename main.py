@@ -120,7 +120,6 @@ def get_integer_input(request, key):
 
 
 def get_report_from_request(request, update_global_stats=True):
-    # TODO: more robust error checking. clientside so they can edit the fields without losing data?
     date = request.get('date', '')
     month_goal = request.get('month_goal', '')
     num_customers_today = get_integer_input(request, 'num_cust_today')
@@ -156,29 +155,33 @@ def get_report_from_request(request, update_global_stats=True):
         old_report = old_report_key.get()
     else:
         old_report = None
+    year_goal = curr_global_stats.year_goal
     if old_report is None:
-        if update_global_stats:
-            curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year + num_customers_today
-            curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year + num_dreams
-            curr_global_stats.put()
+
+        #curr_global_stats.num_dreams_this_year = 1000
+        #curr_global_stats.num_customers_this_year = 1000
+        #curr_global_stats.daily_dream_goal = 100
+        #curr_global_stats.put()
         daily_dream_goal = curr_global_stats.daily_dream_goal
         num_dreams_this_year = curr_global_stats.num_dreams_this_year
         num_customers_this_year = curr_global_stats.num_customers_this_year
-        year_goal = curr_global_stats.year_goal
     else:
-        daily_dream_goal = old_report.daily_dream_goal
-        num_dreams_this_year = old_report.num_dreams_this_year
-        num_customers_this_year = old_report.num_customers_this_year
-        year_goal = old_report.year_goal
+        if update_global_stats:
+            curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year - old_report.num_customers_today
+            curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year - old_report.num_dreams
+        daily_dream_goal = old_report.daily_dream_goal or 100
+        num_dreams_this_year = old_report.num_dreams_this_year + (num_dreams - old_report.num_dreams)
+        num_customers_this_year = old_report.num_customers_this_year  + (num_customers_today - old_report.num_customers_today) 
+
+    if update_global_stats:
+        curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year + num_customers_today
+        curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year + num_dreams
+        curr_global_stats.put()
         
-    print(curr_global_stats)
     if num_dreams is None:
         achievement_rate = None
     else:
         achievement_rate = (num_dreams / float(daily_dream_goal)) * 100
-    num_dreams_this_year = num_dreams_this_year
-    num_customers_this_year = num_customers_this_year
-    year_goal = year_goal
 
     report = Report(
         id=date, 
@@ -211,6 +214,7 @@ def create_report_dict_from_report_obj(curr_report):
         'dreams_year': curr_report.num_dreams_this_year if curr_report.num_dreams_this_year else '',
 
         'month_goal': curr_report.month_goal,
+        'datestring': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
         'readable_datestring': curr_report.readable_datestring if curr_report.readable_datestring else '',
         'num_cust_today': curr_report.num_customers_today if curr_report.num_customers_today else '',
         'num_dreams': curr_report.num_dreams if curr_report.num_dreams else '',
@@ -218,7 +222,7 @@ def create_report_dict_from_report_obj(curr_report):
         'working_members': curr_report.working_members,
         'supporting_members': curr_report.supporting_members,
         'visiting_members': curr_report.visiting_members,
-        'end_time': curr_report.end_time.strftime('%H:%Mpm') if curr_report.end_time else '',
+        'end_time': curr_report.end_time.strftime('%H:%M') if curr_report.end_time else '',
         'pos_cycle': curr_report.positive_cycle if curr_report.positive_cycle else '',
         'total_bowls': curr_report.total_cups if curr_report.total_cups else '',
         'total_cups': curr_report.total_bowls if curr_report.total_bowls else '',
@@ -237,10 +241,18 @@ class CreateReportHandler(webapp2.RequestHandler):
     def get(self):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('createreport.html')
-        curr_report = get_report_from_request(self.request, update_global_stats=False)
+        date_string = self.request.get('date', '')
+        #curr_report = get_report_from_request(self.request, update_global_stats=False)
+        curr_report_key = ndb.Key(Report, date_string)
+        if date_string:
+            curr_report = curr_report_key.get()
+        else:
+            curr_report = None
         if curr_report is not None:
             report_dict = create_report_dict_from_report_obj(curr_report)
             template_values['report'] = report_dict
+        else:
+            template_values['report'] = {}
         self.response.write(template.render(template_values))
 
     def initialize_global_stats(
@@ -262,7 +274,7 @@ class CreateReportHandler(webapp2.RequestHandler):
         # create a new Report object and save it to ndb
         new_report = get_report_from_request(self.request)
         new_report.put()
-        report_page = '/report/' + date
+        report_page = '/report/' + new_report.date.strftime('%Y-%m-%d')
         self.redirect(report_page)
 
 
