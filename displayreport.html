@@ -40,6 +40,9 @@
     {{ entry('Date (yyyy-mm-dd)', 'date', value=report['datestring']) }}
     </div> 
     {% else %}
+    {% if preview %}
+    <input type="hidden" name="date" value="{{ report["date"] }}"/>
+    {% endif %}
     <div class="textcenter">
     {{ report["readable_datestring"] }}
     </div> 
@@ -118,6 +121,7 @@
     </div> 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
+<div id="errortext" style="color: red"></div>
 {% if not form %}
 <a href="/createreport?date={{ report['datestring'] }}">
 <input type="button" class="btn" value="Edit">
@@ -159,16 +163,16 @@ function validateEntry(name, regex) {
 function validateAllEntries() {
     var regexes = {
         'date': /^\d\d\d\d-\d\d-\d\d$/,
-        'year_goal': /^\S+$/,
-        'month_goal': /^\S+$/,
+        'year_goal': /^.+$/,
+        'month_goal': /^.+$/,
 
         'num_cust_today': /^\d+$/,
         'num_dreams': /^\d+$/,
         'num_dreamers': /^\d+$/,
 
-        'working_members': /^\S+$/,
-        'supporting_members': /^\S+$/,
-        'visiting_members': /^\S+$/,
+        'working_members': /^.+$/,
+        'supporting_members': /^.+$/,
+        'visiting_members': /^.+$/,
 
         'end_time': /^(\d\d:\d\d)|(\d\d\d\d)$/,
         'total_bowls': /^\d+$/,
@@ -177,7 +181,7 @@ function validateAllEntries() {
         'total_cups': /^\d+$/,
         'money_off_by': /^\d+$/,
 
-        'misc_notes': /^\S*$/,
+        'misc_notes': /^.*$/,
     }
     var allValid = true;
     for (var name in regexes) {
@@ -185,11 +189,10 @@ function validateAllEntries() {
         var valid = validateEntry(name, regex);
         allValid = allValid && valid;
     }
-    console.log('here');
     if (allValid) {
         return true;
     } else {
-        alert("Detected invalid entry.\n\nPlease enter the correct information in the boxes highlighted in red, and resubmit.");
+        $("#errortext").html("Invalid entry. Please enter the correct information in the boxes highlighted in red, and resubmit.");
         return false;
     }
 }

@@ -51,6 +51,7 @@ class Report(ndb.Model):
     positive_cycle = ndb.IntegerProperty()
     achievement_rate = ndb.FloatProperty()
 
+    misc_notes = ndb.StringProperty()
 
     @property
     def datestring(self):
@@ -134,6 +135,7 @@ def get_report_from_request(request, update_global_stats=True):
     chopsticks_missing = get_integer_input(request,'chopsticks_missing')
     money_off_by = get_integer_input(request, 'money_off_by')
     positive_cycle = get_integer_input(request, 'pos_cycle')
+    misc_notes = request.get('misc_notes', '')
     
     if end_time:
         if ':' in end_time:
@@ -202,7 +204,8 @@ def get_report_from_request(request, update_global_stats=True):
         achievement_rate=achievement_rate,
         num_customers_this_year=num_customers_this_year,
         num_dreams_this_year=num_customers_this_year,
-        year_goal=year_goal
+        year_goal=year_goal,
+        misc_notes=misc_notes,
     )
     return report
 
@@ -214,6 +217,7 @@ def create_report_dict_from_report_obj(curr_report):
         'dreams_year': curr_report.num_dreams_this_year if curr_report.num_dreams_this_year else '',
 
         'month_goal': curr_report.month_goal,
+        'date': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
         'datestring': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
         'readable_datestring': curr_report.readable_datestring if curr_report.readable_datestring else '',
         'num_cust_today': curr_report.num_customers_today if curr_report.num_customers_today else '',
@@ -228,6 +232,7 @@ def create_report_dict_from_report_obj(curr_report):
         'total_cups': curr_report.total_bowls if curr_report.total_bowls else '',
         'chopsticks_missing': curr_report.chopsticks_missing if curr_report.chopsticks_missing else '',
         'money_off_by': curr_report.money_off_by if curr_report.money_off_by else '',
+        'misc_notes': curr_report.misc_notes,
     }
     return report_dict
 
