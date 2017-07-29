@@ -96,11 +96,11 @@ class ViewReportHandler(webapp2.RequestHandler):
         template_values = {}
 
         report_key = ndb.Key(Report, datestring)
-        curr_report = report_key.get()
-        if curr_report is None:
+        current_report = report_key.get()
+        if current_report is None:
             raise endpoints.NotFoundException("No report found for {}".format(datestring))
 
-        report_dict = create_report_dict_from_report_obj(curr_report)
+        report_dict = create_report_dict_from_report_obj(current_report)
 
         template_values['report'] = report_dict
         today_datetime = datetime.now()
@@ -158,34 +158,34 @@ def get_report_from_request(request, update_global_stats=True):
         date_obj = None
 
     global_stats_key = ndb.Key(GlobalStats, "global_stats")
-    curr_global_stats = global_stats_key.get()
+    current_global_stats = global_stats_key.get()
 
     if date != '':
         old_report_key = ndb.Key(Report, date)
         old_report = old_report_key.get()
     else:
         old_report = None
-    year_goal = curr_global_stats.year_goal
+    year_goal = current_global_stats.year_goal
     if old_report is None:
-        #curr_global_stats.dreams_this_year = 1000
-        #curr_global_stats.customers_this_year = 1000
-        #curr_global_stats.daily_dream_goal = 100
-        #curr_global_stats.put()
-        daily_dream_goal = curr_global_stats.daily_dream_goal
-        dreams_this_year = curr_global_stats.dreams_this_year
-        customers_this_year = curr_global_stats.customers_this_year
+        #current_global_stats.dreams_this_year = 1000
+        #current_global_stats.customers_this_year = 1000
+        #current_global_stats.daily_dream_goal = 100
+        #current_global_stats.put()
+        daily_dream_goal = current_global_stats.daily_dream_goal
+        dreams_this_year = current_global_stats.dreams_this_year
+        customers_this_year = current_global_stats.customers_this_year
     else:
         if update_global_stats:
-            curr_global_stats.customers_this_year = curr_global_stats.customers_this_year - old_report.customers_today
-            curr_global_stats.dreams_this_year = curr_global_stats.dreams_this_year - old_report.dreams
+            current_global_stats.customers_this_year = current_global_stats.customers_this_year - old_report.customers_today
+            current_global_stats.dreams_this_year = current_global_stats.dreams_this_year - old_report.dreams
         daily_dream_goal = old_report.daily_dream_goal or 100
         dreams_this_year = old_report.dreams_this_year + (dreams - old_report.dreams)
         customers_this_year = old_report.customers_this_year  + (customers_today - old_report.customers_today) 
 
     if update_global_stats:
-        curr_global_stats.customers_this_year = curr_global_stats.customers_this_year + customers_today
-        curr_global_stats.dreams_this_year = curr_global_stats.dreams_this_year + dreams
-        curr_global_stats.put()
+        current_global_stats.customers_this_year = current_global_stats.customers_this_year + customers_today
+        current_global_stats.dreams_this_year = current_global_stats.dreams_this_year + dreams
+        current_global_stats.put()
         
     if dreams is None:
         achievement_rate = None
@@ -217,29 +217,29 @@ def get_report_from_request(request, update_global_stats=True):
     return report
 
 
-def create_report_dict_from_report_obj(curr_report):
+def create_report_dict_from_report_obj(current_report):
     report_dict = {
-        'year_goal': curr_report.year_goal,
-        'customers_year': curr_report.customers_this_year if curr_report.customers_this_year else '',
-        'dreams_year': curr_report.dreams_this_year if curr_report.dreams_this_year else '',
+        'year_goal': current_report.year_goal,
+        'customers_year': current_report.customers_this_year if current_report.customers_this_year else '',
+        'dreams_year': current_report.dreams_this_year if current_report.dreams_this_year else '',
 
-        'month_goal': curr_report.month_goal,
-        'date': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
-        'datestring': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
-        'readable_datestring': curr_report.readable_datestring if curr_report.readable_datestring else '',
-        'customers_today': curr_report.customers_today if curr_report.customers_today else '',
-        'dreams': curr_report.dreams if curr_report.dreams else '',
-        'dreamers': curr_report.dreamers if curr_report.dreamers else '',
-        'working_members': curr_report.working_members,
-        'supporting_members': curr_report.supporting_members,
-        'visiting_members': curr_report.visiting_members,
-        'end_time': curr_report.end_time.strftime('%H:%M') if curr_report.end_time else '',
-        'positive_cycle': curr_report.positive_cycle if curr_report.positive_cycle else '',
-        'total_bowls': curr_report.total_cups if curr_report.total_cups else '',
-        'total_cups': curr_report.total_bowls if curr_report.total_bowls else '',
-        'chopsticks_missing': curr_report.chopsticks_missing if curr_report.chopsticks_missing else '',
-        'money_off_by': curr_report.money_off_by if curr_report.money_off_by else '',
-        'misc_notes': curr_report.misc_notes,
+        'month_goal': current_report.month_goal,
+        'date': current_report.date.strftime('%Y-%m-%d') if current_report.date else '',
+        'datestring': current_report.date.strftime('%Y-%m-%d') if current_report.date else '',
+        'readable_datestring': current_report.readable_datestring if current_report.readable_datestring else '',
+        'customers_today': current_report.customers_today if current_report.customers_today else '',
+        'dreams': current_report.dreams if current_report.dreams else '',
+        'dreamers': current_report.dreamers if current_report.dreamers else '',
+        'working_members': current_report.working_members,
+        'supporting_members': current_report.supporting_members,
+        'visiting_members': current_report.visiting_members,
+        'end_time': current_report.end_time.strftime('%H:%M') if current_report.end_time else '',
+        'positive_cycle': current_report.positive_cycle if current_report.positive_cycle else '',
+        'total_bowls': current_report.total_cups if current_report.total_cups else '',
+        'total_cups': current_report.total_bowls if current_report.total_bowls else '',
+        'chopsticks_missing': current_report.chopsticks_missing if current_report.chopsticks_missing else '',
+        'money_off_by': current_report.money_off_by if current_report.money_off_by else '',
+        'misc_notes': current_report.misc_notes,
     }
     return report_dict
 
@@ -254,14 +254,14 @@ class CreateReportHandler(webapp2.RequestHandler):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('createreport.html')
         date_string = self.request.get('date', '')
-        #curr_report = get_report_from_request(self.request, update_global_stats=False)
-        curr_report_key = ndb.Key(Report, date_string)
+        #current_report = get_report_from_request(self.request, update_global_stats=False)
+        current_report_key = ndb.Key(Report, date_string)
         if date_string:
-            curr_report = curr_report_key.get()
+            current_report = current_report_key.get()
         else:
-            curr_report = None
-        if curr_report is not None:
-            report_dict = create_report_dict_from_report_obj(curr_report)
+            current_report = None
+        if current_report is not None:
+            report_dict = create_report_dict_from_report_obj(current_report)
             template_values['report'] = report_dict
         else:
             template_values['report'] = {}
@@ -299,9 +299,9 @@ class PreviewReportHandler(webapp2.RequestHandler):
     def get(self):
         template_values = {}
         # create Report object based on self.request (using the same logic as ViewReportHandler), pass it into template_values['report']
-        curr_report = get_report_from_request(self.request, update_global_stats=False)
+        current_report = get_report_from_request(self.request, update_global_stats=False)
 
-        report_dict = create_report_dict_from_report_obj(curr_report)
+        report_dict = create_report_dict_from_report_obj(current_report)
         template_values['report'] = report_dict
         template_values['preview'] = True
         template = JINJA_ENVIRONMENT.get_template('report.html')
