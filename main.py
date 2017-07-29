@@ -18,8 +18,8 @@ class GlobalStats(ndb.Model):
     '''
     Global information needed for all reports (like yearly dreamcount)
     '''
-    num_customers_this_year = ndb.IntegerProperty()
-    num_dreams_this_year = ndb.IntegerProperty()
+    customers_this_year = ndb.IntegerProperty()
+    dreams_this_year = ndb.IntegerProperty()
     daily_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
     year_goal = ndb.StringProperty()
 
@@ -30,14 +30,14 @@ class Report(ndb.Model):
     '''
     date = ndb.DateTimeProperty()
     month_goal = ndb.StringProperty()
-    num_customers_today = ndb.IntegerProperty()
-    num_dreamers = ndb.IntegerProperty()
-    num_dreams = ndb.IntegerProperty()
+    customers_today = ndb.IntegerProperty()
+    dreamers = ndb.IntegerProperty()
+    dreams = ndb.IntegerProperty()
        
     """ Global stats snapshot """
     year_goal = ndb.StringProperty()
-    num_customers_this_year = ndb.IntegerProperty()
-    num_dreams_this_year = ndb.IntegerProperty()
+    customers_this_year = ndb.IntegerProperty()
+    dreams_this_year = ndb.IntegerProperty()
     daily_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
 
     working_members = ndb.StringProperty()
@@ -65,7 +65,7 @@ class Report(ndb.Model):
     def readable_datestring(self):
         ''' Tuesday June 13, 2017 '''
         if self.date:
-            return self.date.strftime('%A %b %d, %Y')
+            return self.date.strftime('%A %B %d, %Y')
         else:
             return None
 
@@ -121,11 +121,19 @@ def get_integer_input(request, key):
 
 
 def get_report_from_request(request, update_global_stats=True):
+    '''
+    Naming convention: 
+    * when reporting numbers/count of things don't do num_* or count_* just say the thing
+    *    if something's in the report, use that name i.e. "total bowls" -> "total_bowls"
+    * always spell out the full word i.e. "customers" over "cust"
+    * separate all words with underscores
+    * variable name and key name need to be the same
+    '''
     date = request.get('date', '')
     month_goal = request.get('month_goal', '')
-    num_customers_today = get_integer_input(request, 'num_cust_today')
-    num_dreamers = get_integer_input(request, 'num_dreamers')
-    num_dreams = get_integer_input(request, 'num_dreams')
+    customers_today = get_integer_input(request, 'customers_today')
+    dreamers = get_integer_input(request, 'dreamers')
+    dreams = get_integer_input(request, 'dreams')
     working_members = request.get('working_members', '')
     supporting_members = request.get('supporting_members', '')
     visiting_members = request.get('visiting_members', '')
@@ -134,7 +142,7 @@ def get_report_from_request(request, update_global_stats=True):
     total_cups = get_integer_input(request, 'total_cups')
     chopsticks_missing = get_integer_input(request,'chopsticks_missing')
     money_off_by = get_integer_input(request, 'money_off_by')
-    positive_cycle = get_integer_input(request, 'pos_cycle')
+    positive_cycle = get_integer_input(request, 'positive_cycle')
     misc_notes = request.get('misc_notes', '')
     
     if end_time:
@@ -159,39 +167,38 @@ def get_report_from_request(request, update_global_stats=True):
         old_report = None
     year_goal = curr_global_stats.year_goal
     if old_report is None:
-
-        #curr_global_stats.num_dreams_this_year = 1000
-        #curr_global_stats.num_customers_this_year = 1000
+        #curr_global_stats.dreams_this_year = 1000
+        #curr_global_stats.customers_this_year = 1000
         #curr_global_stats.daily_dream_goal = 100
         #curr_global_stats.put()
         daily_dream_goal = curr_global_stats.daily_dream_goal
-        num_dreams_this_year = curr_global_stats.num_dreams_this_year
-        num_customers_this_year = curr_global_stats.num_customers_this_year
+        dreams_this_year = curr_global_stats.dreams_this_year
+        customers_this_year = curr_global_stats.customers_this_year
     else:
         if update_global_stats:
-            curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year - old_report.num_customers_today
-            curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year - old_report.num_dreams
+            curr_global_stats.customers_this_year = curr_global_stats.customers_this_year - old_report.customers_today
+            curr_global_stats.dreams_this_year = curr_global_stats.dreams_this_year - old_report.dreams
         daily_dream_goal = old_report.daily_dream_goal or 100
-        num_dreams_this_year = old_report.num_dreams_this_year + (num_dreams - old_report.num_dreams)
-        num_customers_this_year = old_report.num_customers_this_year  + (num_customers_today - old_report.num_customers_today) 
+        dreams_this_year = old_report.dreams_this_year + (dreams - old_report.dreams)
+        customers_this_year = old_report.customers_this_year  + (customers_today - old_report.customers_today) 
 
     if update_global_stats:
-        curr_global_stats.num_customers_this_year = curr_global_stats.num_customers_this_year + num_customers_today
-        curr_global_stats.num_dreams_this_year = curr_global_stats.num_dreams_this_year + num_dreams
+        curr_global_stats.customers_this_year = curr_global_stats.customers_this_year + customers_today
+        curr_global_stats.dreams_this_year = curr_global_stats.dreams_this_year + dreams
         curr_global_stats.put()
         
-    if num_dreams is None:
+    if dreams is None:
         achievement_rate = None
     else:
-        achievement_rate = (num_dreams / float(daily_dream_goal)) * 100
+        achievement_rate = (dreams / float(daily_dream_goal)) * 100
 
     report = Report(
         id=date, 
         date=date_obj, 
         month_goal=month_goal,
-        num_customers_today=num_customers_today,
-        num_dreamers=num_dreamers,
-        num_dreams=num_dreams,
+        customers_today=customers_today,
+        dreamers=dreamers,
+        dreams=dreams,
         working_members=working_members,
         supporting_members=supporting_members,
         visiting_members=visiting_members,
@@ -202,8 +209,8 @@ def get_report_from_request(request, update_global_stats=True):
         money_off_by=money_off_by,
         positive_cycle=positive_cycle,
         achievement_rate=achievement_rate,
-        num_customers_this_year=num_customers_this_year,
-        num_dreams_this_year=num_customers_this_year,
+        customers_this_year=customers_this_year,
+        dreams_this_year=customers_this_year,
         year_goal=year_goal,
         misc_notes=misc_notes,
     )
@@ -213,21 +220,21 @@ def get_report_from_request(request, update_global_stats=True):
 def create_report_dict_from_report_obj(curr_report):
     report_dict = {
         'year_goal': curr_report.year_goal,
-        'customers_year': curr_report.num_customers_this_year if curr_report.num_customers_this_year else '',
-        'dreams_year': curr_report.num_dreams_this_year if curr_report.num_dreams_this_year else '',
+        'customers_year': curr_report.customers_this_year if curr_report.customers_this_year else '',
+        'dreams_year': curr_report.dreams_this_year if curr_report.dreams_this_year else '',
 
         'month_goal': curr_report.month_goal,
         'date': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
         'datestring': curr_report.date.strftime('%Y-%m-%d') if curr_report.date else '',
         'readable_datestring': curr_report.readable_datestring if curr_report.readable_datestring else '',
-        'num_cust_today': curr_report.num_customers_today if curr_report.num_customers_today else '',
-        'num_dreams': curr_report.num_dreams if curr_report.num_dreams else '',
-        'num_dreamers': curr_report.num_dreamers if curr_report.num_dreamers else '',
+        'customers_today': curr_report.customers_today if curr_report.customers_today else '',
+        'dreams': curr_report.dreams if curr_report.dreams else '',
+        'dreamers': curr_report.dreamers if curr_report.dreamers else '',
         'working_members': curr_report.working_members,
         'supporting_members': curr_report.supporting_members,
         'visiting_members': curr_report.visiting_members,
         'end_time': curr_report.end_time.strftime('%H:%M') if curr_report.end_time else '',
-        'pos_cycle': curr_report.positive_cycle if curr_report.positive_cycle else '',
+        'positive_cycle': curr_report.positive_cycle if curr_report.positive_cycle else '',
         'total_bowls': curr_report.total_cups if curr_report.total_cups else '',
         'total_cups': curr_report.total_bowls if curr_report.total_bowls else '',
         'chopsticks_missing': curr_report.chopsticks_missing if curr_report.chopsticks_missing else '',
@@ -262,14 +269,14 @@ class CreateReportHandler(webapp2.RequestHandler):
 
     def initialize_global_stats(
             self,
-            num_customers_this_year,
-            num_dreams_this_year,
+            customers_this_year,
+            dreams_this_year,
             daily_dream_goal,
             year_goal,
         ):
         global_stats = GlobalStats(id="global_stats",
-                                    num_customers_this_year=19636,
-                                    num_dreams_this_year=18000,
+                                    customers_this_year=19636,
+                                    dreams_this_year=18000,
                                     daily_dream_goal=180,
                                     year_goal = "say less things")
         global_stats.put()

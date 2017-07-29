@@ -59,7 +59,7 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Customers today', 'num_cust_today', type="number") }}
+    {{ entry('Customers today', 'customers_today', type="number") }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Customers this year', 'customers_year') }}
@@ -67,7 +67,7 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreams today', 'num_dreams', type="number") }}
+    {{ entry('Number of dreams today', 'dreams', type="number") }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Number of dreams this year', 'dreams_year') }}
@@ -75,7 +75,7 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreamers today', 'num_dreamers', type="number") }}
+    {{ entry('Number of dreamers today', 'dreamers', type="number") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -99,7 +99,7 @@
     {{ entry("End time", "end_time") }}
     {% endif %}
     {{ hspace() }}
-    {{ entry("Positive cycle", "pos_cycle", type="number") }}
+    {{ entry("Positive cycle", "positive_cycle", type="number") }}
     </div> 
 
     <div class="textcenter">
@@ -166,9 +166,9 @@ function validateAllEntries() {
         'year_goal': /^.+$/,
         'month_goal': /^.+$/,
 
-        'num_cust_today': /^\d+$/,
-        'num_dreams': /^\d+$/,
-        'num_dreamers': /^\d+$/,
+        'customers_today': /^\d+$/,
+        'dreams': /^\d+$/,
+        'dreamers': /^\d+$/,
 
         'working_members': /^.+$/,
         'supporting_members': /^.+$/,
@@ -177,7 +177,7 @@ function validateAllEntries() {
         'end_time': /^(\d\d:\d\d)|(\d\d\d\d)$/,
         'total_bowls': /^\d+$/,
         'chopsticks_missing': /^\d+$/,
-        'pos_cycle': /^\d+$/,
+        'positive_cycle': /^\d+$/,
         'total_cups': /^\d+$/,
         'money_off_by': /^\d+$/,
 
