@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block body %}
     {% if reports %}
-    <div>
+    <div class="fixedwidthreport">
         <br>
         Most recent reports: 
         <ul>
         {% for report in reports %} {# assumes list is sorted #}
         <li>
-            <a href="/report/{{ report.datestring }}">{{ report.readable_datestring }}</a>
+            <a href="/report/{{ report.datestring }}">{{ report.readable_datestring }} ({{ report.dreams }} dreams)</a>
         </li>
         {% endfor %}
         </ul>

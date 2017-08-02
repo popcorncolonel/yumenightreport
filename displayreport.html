@@ -33,8 +33,15 @@
 <form action="/createreport" method="POST">
 {% endif %}
 
-<div class="parent">
+<div class="bluebackground">
+<div class="parent fixedwidthreport">
+    {% if hidetitleimg %}
+    <img class="centerimg titleimg" src="/images/logo.png"/>
+    {% endif %}
+    <h2 class="textcenter"> Nightly Report </h2> 
+    {#
     <h2 class="textcenter"> Yume Wo Katare Nightly Report </h2> 
+    #}
     {% if form %}
     <div class="textcenter">
     {{ entry('Date (yyyy-mm-dd)', 'date', value=report['datestring']) }}
@@ -59,23 +66,23 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Customers today', 'customers_today', type="number") }}
+    {{ entry('Customers today', 'customers_today', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Customers this year', 'customers_year') }}
+    {{ entry('Customers this year', 'customers_year', class="shorttextbox") }}
     {% endif %}
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreams today', 'dreams', type="number") }}
+    {{ entry('Number of dreams today', 'dreams', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Number of dreams this year', 'dreams_year') }}
+    {{ entry('Number of dreams this year', 'dreams_year', class="shorttextbox") }}
     {% endif %}
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreamers today', 'dreamers', type="number") }}
+    {{ entry('Number of dreamers today', 'dreamers', type="number", class="shorttextbox") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -94,24 +101,24 @@
 
     <div class="textcenter">
     {% if form %}
-    {{ entry("End time (hh:mm)", 'end_time') }}
+    {{ entry("End time (hh:mm)", 'end_time', class="shorttextbox") }}
     {% else %}
     {{ entry("End time", "end_time") }}
     {% endif %}
     {{ hspace() }}
-    {{ entry("Positive cycle", "positive_cycle", type="number") }}
+    {{ entry("Positive cycle", "positive_cycle", type="number", class="shorttextbox") }}
     </div> 
 
     <div class="textcenter">
-    {{ entry("Total bowls", "total_bowls", type="number") }}
+    {{ entry("Total bowls", "total_bowls", type="number", class="shorttextbox") }}
     {{ hspace() }}
-    {{ entry("Total cups", "total_cups", type="number") }}
+    {{ entry("Total cups", "total_cups", type="number", class="shorttextbox") }}
     </div> 
 
     <div class="textcenter">
-    {{ entry("Chopsticks missing", "chopsticks_missing", type="number") }}
+    {{ entry("Chopsticks missing", "chopsticks_missing", type="number", class="shorttextbox") }}
     {{ hspace() }}
-    {{ entry("Money off by", "money_off_by", type="number") }}
+    {{ entry("Money off by", "money_off_by", type="number", class="shorttextbox") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -134,6 +141,7 @@
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% endif %}
 
+</div> 
 </div> 
 
 {% if form %}
@@ -196,6 +204,28 @@ function validateAllEntries() {
         return false;
     }
 }
+
+function prefillDate() {
+    var today = new Date();
+    var hours = today.getHours();
+    if (hours < 9) {
+        today = new Date(today.getTime() - (24 * 60 * 60 * 1000));
+    }
+    var dd = today.getDate();
+    var mm = today.getMonth() + 1;
+    var yyyy = today.getFullYear();
+    if (dd < 10) {
+        dd = '0'+dd;
+    }
+    if (mm < 10) {
+        mm = '0'+mm;
+    }
+
+    var datestring = '' + yyyy + '-' + mm + '-' + dd;
+    $("input[name='date']").val(datestring);
+}
+
+$(document).ready(prefillDate);
 
 // if we return false, the form won't be submitted
 $("form").submit(validateAllEntries);

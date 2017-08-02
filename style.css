@@ -12,10 +12,20 @@ body{
     text-align: center;
 }
 
+.bluebackground {
+    background-color: #497DCA;
+}
+
+.fixedwidthreport {
+    width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+    background-color: white;
+}
+
 .navlinks {
     padding-top: 1em;
     padding-bottom: 1em;
-    border-top: 2px solid #000;
     width: 100%;
     margin-left: auto;
     margin-right: auto;
@@ -48,5 +58,15 @@ body{
 
 input.longtextbox {
     width: 20em;
+}
+
+input.shorttextbox {
+    width: 5em;
+}
+
+input[type='text'],
+input[type='number']
+{
+    margin-top: 5px;
 }
 

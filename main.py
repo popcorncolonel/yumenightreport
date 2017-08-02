@@ -105,6 +105,7 @@ class ViewReportHandler(webapp2.RequestHandler):
         template_values['report'] = report_dict
         today_datetime = datetime.now()
         template_values['today_datestring'] = today_datetime.strftime('%Y-%m-%d')
+        template_values['hidetitleimg'] = True
         
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
@@ -265,6 +266,7 @@ class CreateReportHandler(webapp2.RequestHandler):
             template_values['report'] = report_dict
         else:
             template_values['report'] = {}
+        template_values['hidetitleimg'] = True
         self.response.write(template.render(template_values))
 
     def initialize_global_stats(
@@ -304,6 +306,7 @@ class PreviewReportHandler(webapp2.RequestHandler):
         report_dict = create_report_dict_from_report_obj(current_report)
         template_values['report'] = report_dict
         template_values['preview'] = True
+        template_values['hidetitleimg'] = True
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
 
@@ -325,5 +328,5 @@ app = webapp2.WSGIApplication([
     (r'/report/(\d\d\d\d-\d\d-\d\d)', ViewReportHandler),
     (r'/createreport', CreateReportHandler),
     (r'/previewreport', PreviewReportHandler),
-    (r'/', MainHandler),
+    (r'/', ViewAllReportsHandler),
 ], debug=True)
