@@ -30,8 +30,8 @@ class GlobalStats(ndb.Model):
     customers_this_year = ndb.IntegerProperty()
     dreams_this_year = ndb.IntegerProperty()
     yearly_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
-    year_goal = ndb.StringProperty()
-    month_goal = ndb.StringProperty()
+    year_goal = ndb.StringProperty(default="")
+    month_goal = ndb.StringProperty(default="")
 
     def daily_dream_goal(self, working_days_left_in_year=None, datetime_obj=None):
         dreams_remaining = max(0, self.yearly_dream_goal - self.dreams_this_year)
@@ -42,9 +42,25 @@ class GlobalStats(ndb.Model):
         return dreams_remaining / working_days_left_in_year
 
 
+def initialize_global_stats():
+    global_stats = GlobalStats(
+        id="global_stats",
+        customers_this_year=26108-182,
+        dreams_this_year=25484-135,
+        yearly_dream_goal=40000,
+        year_goal="Say less",
+        month_goal="",
+    )
+    global_stats.put()
+    return global_stats
+
+
 def get_global_stats():
     global_stats_key = ndb.Key(GlobalStats, "global_stats")
-    return global_stats_key.get()
+    global_stats = global_stats_key.get()
+    if global_stats is None:
+        return GlobalStats()
+    return global_stats
 
 
 class Report(ndb.Model):
@@ -238,11 +254,11 @@ def get_report_from_request(request, update_global_stats=True):
         if old_report:
             current_global_stats.customers_this_year -= old_report.customers_today
             current_global_stats.dreams_this_year -= old_report.dreams
-        current_global_stats.customers_this_year = current_global_stats.customers_this_year + customers_today
-        current_global_stats.dreams_this_year = current_global_stats.dreams_this_year + dreams
+        current_global_stats.customers_this_year += customers_today
+        current_global_stats.dreams_this_year += dreams
         current_global_stats.put()
 
-    report = Report(
+    return Report(
         id=date, 
         date=date_obj, 
         customers_today=customers_today,
@@ -259,7 +275,7 @@ def get_report_from_request(request, update_global_stats=True):
         positive_cycle=positive_cycle,
         achievement_rate=achievement_rate,
         misc_notes=misc_notes,
-        # global_stats snapshot
+        # global_stats snapshot:
         month_goal=month_goal,
         year_goal=year_goal,
         yearly_dream_goal=yearly_dream_goal,
@@ -267,12 +283,11 @@ def get_report_from_request(request, update_global_stats=True):
         customers_this_year=customers_this_year,
         daily_dream_goal=daily_dream_goal,
     )
-    return report
 
 
 def create_report_dict_from_report_obj(current_report):
     report_dict = {
-        'year_goal': current_report.year_goal,
+        'year_goal': current_report.year_goal if current_report.year_goal else '',
         'customers_year': current_report.customers_this_year if current_report.customers_this_year else '',
         'dreams_year': current_report.dreams_this_year if current_report.dreams_this_year else '',
         'datetime_obj': current_report.date,
@@ -282,6 +297,7 @@ def create_report_dict_from_report_obj(current_report):
         'customers_today': current_report.customers_today if current_report.customers_today else '',
         'dreams': current_report.dreams if current_report.dreams else '',
         'dreamers': current_report.dreamers if current_report.dreamers else '',
+        'achievement_rate': '{:.2f}%'.format(current_report.achievement_rate) if current_report.achievement_rate else '', 
         'working_members': current_report.working_members,
         'supporting_members': current_report.supporting_members,
         'visiting_members': current_report.visiting_members,
@@ -306,7 +322,6 @@ class CreateReportHandler(webapp2.RequestHandler):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('createreport.html')
         date_string = self.request.get('date', '')
-        #current_report = get_report_from_request(self.request, update_global_stats=False)
         current_report_key = ndb.Key(Report, date_string)
         if date_string:
             current_report = current_report_key.get()
@@ -319,23 +334,12 @@ class CreateReportHandler(webapp2.RequestHandler):
             template_values['report'] = {}
         template_values['global_stats'] = get_global_stats()
         template_values['hidetitleimg'] = True
-        #self.initialize_global_stats()
         self.response.write(template.render(template_values))
-
-    def initialize_global_stats(self):
-        global_stats = GlobalStats(
-            id="global_stats",
-            customers_this_year=19636,
-            dreams_this_year=18000,
-            year_goal = "Say less things",
-            month_goal = "",
-        )
-        global_stats.put()
 
     def post(self):
         # get stuff from POST request
         # create a new Report object and save it to ndb
-        new_report = get_report_from_request(self.request)
+        new_report = get_report_from_request(self.request, update_global_stats=True)
         new_report.put()
         report_page = '/report/' + new_report.date.strftime('%Y-%m-%d')
         self.redirect(report_page)
@@ -369,6 +373,7 @@ class EditGoalHandler(webapp2.RequestHandler):
     '''
     def get(self):
         template_values = {}
+        #initialize_global_stats()
         template_values['global_stats'] = get_global_stats()
         template = JINJA_ENVIRONMENT.get_template('editgoals.html')
         self.response.write(template.render(template_values))

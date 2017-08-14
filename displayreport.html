@@ -93,6 +93,10 @@
 
     <div class="textcenter">
     {{ entry('Number of dreamers today', 'dreamers', type="number", class="shorttextbox") }}
+    {% if not form %}
+    {{ hspace() }}
+    {{ entry('Dream achievement rate', 'achievement_rate', class="shorttextbox") }}
+    {% endif %}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
