@@ -144,7 +144,7 @@
 
 <div id="errortext" style="color: red"></div>
 {% if not form %}
-<a href="/createreport?date={{ report['datestring'] }}">
+<a href="/createreport?date={{ report['datestring'] }}" style="text-decoration: none;">
 <input type="button" class="btn" value="Edit">
 </a>
 {% endif %}
@@ -153,6 +153,10 @@
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% elif preview %}
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
+{% else %}
+<form id="delete-form" action="/deletereport/{{ report['datestring'] }}" method="post" style="display: inline;">
+<button onclick="delete_button_click()" class="btn">Delete</button>
+</form>
 {% endif %}
 
 </div> 
@@ -160,6 +164,13 @@
 
 {% if form %}
 <script>
+function clicked() {
+   if (confirm('Are you sure you want to delete this report?')) {
+       $('delete-form').submit();
+   } else {
+       return false;
+   }
+}
 
 function validateEntry(name, regex) {
     /*

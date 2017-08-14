@@ -188,20 +188,32 @@ def get_old_report(date):
     return old_report
 
 
-def get_global_stats_vars(current_global_stats, old_report, date_obj):
+def get_global_stats_vars(
+    current_global_stats,
+    old_report,
+    date_obj,
+    dreams,
+    customers_today,
+):
+    '''
+    Gets the current global stats variables from global_stats if `old_report` is None,
+    but gets the variables from the snapshot in `old_report` otherwise. 
+
+    `date_obj` is the date of the report that is being submitted.
+    '''
     if old_report is None:
         month_goal = current_global_stats.month_goal
         year_goal = current_global_stats.year_goal
         yearly_dream_goal = current_global_stats.yearly_dream_goal
-        dreams_this_year = current_global_stats.dreams_this_year
-        customers_this_year = current_global_stats.customers_this_year
+        dreams_this_year = current_global_stats.dreams_this_year + dreams
+        customers_this_year = current_global_stats.customers_this_year + customers_today
         daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(date_obj.date()))
     else:
         month_goal = old_report.month_goal
         year_goal = old_report.year_goal
         yearly_dream_goal = old_report.yearly_dream_goal
-        dreams_this_year = old_report.dreams_this_year + (dreams - old_report.dreams)
-        customers_this_year = old_report.customers_this_year + (customers_today - old_report.customers_today) 
+        dreams_this_year = old_report.dreams_this_year + dreams - old_report.dreams
+        customers_this_year = old_report.customers_this_year + customers_today - old_report.customers_today
         daily_dream_goal = old_report.daily_dream_goal
     return month_goal, year_goal, yearly_dream_goal, dreams_this_year, customers_this_year, daily_dream_goal
 
@@ -210,6 +222,8 @@ def get_achievement_rate(dreams, daily_dream_goal):
     if dreams is None:
         achievement_rate = None
     else:
+        if daily_dream_goal == 0:
+            return 100.
         achievement_rate = (dreams / float(daily_dream_goal)) * 100
     return achievement_rate
 
@@ -247,7 +261,13 @@ def get_report_from_request(request, update_global_stats=True):
      yearly_dream_goal,
      dreams_this_year,
      customers_this_year,
-     daily_dream_goal) = get_global_stats_vars(current_global_stats, old_report, date_obj)
+     daily_dream_goal) = get_global_stats_vars(
+        current_global_stats,
+        old_report,
+        date_obj,
+        dreams,
+        customers_today,
+    )
     achievement_rate = get_achievement_rate(dreams, daily_dream_goal)
 
     if update_global_stats:
@@ -285,8 +305,9 @@ def get_report_from_request(request, update_global_stats=True):
     )
 
 
-def create_report_dict_from_report_obj(current_report):
+def create_report_dict_from_report_obj(current_report, preview=False):
     report_dict = {
+        # TODO: yearly dream goal goes here (from the snapshot). Why should displayreport use information from global_stats at all (when viewing a report) if there's a snapshot?
         'year_goal': current_report.year_goal if current_report.year_goal else '',
         'customers_year': current_report.customers_this_year if current_report.customers_this_year else '',
         'dreams_year': current_report.dreams_this_year if current_report.dreams_this_year else '',
@@ -355,7 +376,7 @@ class PreviewReportHandler(webapp2.RequestHandler):
         template_values = {}
         # create Report object based on self.request (using the same logic as ViewReportHandler)
         current_report = get_report_from_request(self.request, update_global_stats=False)
-        report_dict = create_report_dict_from_report_obj(current_report)
+        report_dict = create_report_dict_from_report_obj(current_report, preview=True)
         global_stats = get_global_stats()
         template_values['global_stats'] = global_stats
         template_values['report'] = report_dict
@@ -390,6 +411,19 @@ class EditGoalHandler(webapp2.RequestHandler):
         self.get()
 
 
+class DeleteReportHandler(webapp2.RequestHandler):
+    def post(self, datestring):
+        # TODO: get all report objects with a date greater than this one and decrement their yearly snapshots by the amount in this report
+        report_key = ndb.Key(Report, datestring)
+        report = report_key.get()
+        # delete dreams/customers from this report from the global stats
+        global_stats = get_global_stats()
+        global_stats.customers_this_year -= report.customers_today
+        global_stats.dreams_this_year -= report.dreams
+        report_key.delete()
+        self.redirect('/')
+
+
 class MainHandler(webapp2.RequestHandler):
     '''
     Main page: Links to creating a report or viewing all reports, or view most recent report?
@@ -409,5 +443,6 @@ app = webapp2.WSGIApplication([
     (r'/createreport', CreateReportHandler),
     (r'/previewreport', PreviewReportHandler),
     (r'/editgoals', EditGoalHandler),
+    (r'/deletereport/(\d\d\d\d-\d\d-\d\d)', DeleteReportHandler),
     (r'/', ViewAllReportsHandler),
 ], debug=True)

@@ -3,6 +3,7 @@
 <form action="/editgoals" method="POST">
 <div class="bluebackground">
 <div class="parent fixedwidthreport">
+<h3>Goals:</h3>
 
 Yearly dream goal: 
 <input name='yearly_dream_goal' value="{{ global_stats.yearly_dream_goal }}" type="number"/>
@@ -18,8 +19,25 @@ Year goal:
 
 <input type="submit" class="btn" value="Submit"/>
 
+<hr>
+
+<h3>Statistics:</h3>
+<strong>Total yearly customers</strong>: <span>{{ global_stats.customers_this_year }}</span>
+<br>
+<strong>Total yearly dreams</strong>: <span> {{ global_stats.dreams_this_year }}</span>
+<br>
+<strong>Dreams remaining until goal</strong>: <span>
+{% if global_stats.yearly_dream_goal - global_stats.dreams_this_year > 0 %}
+{{ global_stats.yearly_dream_goal - global_stats.dreams_this_year }}
+{% else %} 
+0
+{% endif %}
+</span>
+
+
 </div>
 </div>
 </form>
+
 {% endblock %}
 
