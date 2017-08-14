@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<form action="/editgoals" method="POST">
+<div class="bluebackground">
+<div class="parent fixedwidthreport">
+
+Yearly dream goal: 
+<input name='yearly_dream_goal' value="{{ global_stats.yearly_dream_goal }}" type="number"/>
+<br>
+Month goal: 
+<input name='month_goal' value="{{ global_stats.month_goal }}" type="text"/>
+<br>
+Year goal: 
+<input name='year_goal' value="{{ global_stats.year_goal }}" type="text"/>
+<br>
+
+<input type="submit" class="btn" value="Submit"/>
+
+</div>
+</div>
+</form>
+{% endblock %}
+

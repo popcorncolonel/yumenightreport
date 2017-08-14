@@ -39,9 +39,6 @@
     <img class="centerimg titleimg" src="/images/logo.jpg"/>
     {% endif %}
     <h2 class="textcenter"> Nightly Report </h2> 
-    {#
-    <h2 class="textcenter"> Yume Wo Katare Nightly Report </h2> 
-    #}
     {% if form %}
     <div class="textcenter">
     {{ entry('Date (yyyy-mm-dd)', 'date', value=report['datestring']) }}
@@ -58,9 +55,22 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Yearly goal', 'year_goal', "Don't say a lot of things!") }}
+    <strong>Yearly goal</strong>: <span name='year_goal'> {{ report['year_goal'] if report['year_goal'] else global_stats.year_goal }} </span>
     {{ hspace() }}
-    {{ entry('Monthly goal', 'month_goal') }}
+    <strong>Monthly goal</strong>: <span name='month_goal'> {{ report['month_goal'] if report['month_goal'] else global_stats.month_goal }} </span>
+    </div> 
+    <div class="textcenter">
+    <strong>Yearly dream goal</strong>: <span name='yearly_dream_goal'> {{ report['yearly_dream_goal'] if report['yearly_dream_goal'] else global_stats.yearly_dream_goal }} </span>
+    {{ hspace() }}
+    <strong>Daily dream goal</strong>: <span name='daily_dream_goal'>
+    {% if 'daily_dream_goal' in report %}
+    {{ report['daily_dream_goal'] }}
+    {% elif 'datetime_obj' in report %}
+    {{ global_stats.daily_dream_goal(datetime_obj=report['datetime_obj']) }}
+    {% else %}
+    {{ global_stats.daily_dream_goal() }}
+    {% endif %}
+    </span>
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -171,8 +181,6 @@ function validateEntry(name, regex) {
 function validateAllEntries() {
     var regexes = {
         'date': /^\d\d\d\d-\d\d-\d\d$/,
-        'year_goal': /^.+$/,
-        'month_goal': /^.+$/,
 
         'customers_today': /^\d+$/,
         'dreams': /^\d+$/,
