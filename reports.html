@@ -7,7 +7,7 @@
         <ul>
         {% for report in reports %} {# assumes list is sorted #}
         <li>
-            <a href="/report/{{ report.datestring }}">{{ report.readable_datestring }} ({{ report.dreams }} dreams)</a>
+            <a href="/report/{{ report.date_string }}">{{ report.readable_date_string }} ({{ report.dreams }} dreams)</a>
         </li>
         {% endfor %}
         </ul>

@@ -33,6 +33,12 @@
 <form action="/createreport" method="POST">
 {% endif %}
 
+{% if form %}
+<input type="hidden" name="old_date_string" value="{{ report['date_string'] }}"/>
+{% elif preview and old_date_string %}
+<input type="hidden" name="old_date_string" value="{{ old_date_string }}"/>
+{% endif %}
+
 <div class="bluebackground">
 <div class="parent fixedwidthreport">
     {% if hidetitleimg %}
@@ -41,14 +47,14 @@
     <h2 class="textcenter"> Nightly Report </h2> 
     {% if form %}
     <div class="textcenter">
-    {{ entry('Date (yyyy-mm-dd)', 'date', value=report['datestring']) }}
+    {{ entry('Date (yyyy-mm-dd)', 'date', value=report['date_string']) }}
     </div> 
     {% else %}
     {% if preview %}
     <input type="hidden" name="date" value="{{ report["date"] }}"/>
     {% endif %}
     <div class="textcenter">
-    {{ report["readable_datestring"] }}
+    {{ report["readable_date_string"] }}
     </div> 
     {% endif %}
 
@@ -79,7 +85,7 @@
     {{ entry('Customers today', 'customers_today', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Customers this year', 'customers_year', class="shorttextbox") }}
+    {{ entry('Customers this year', 'customers_this_year', class="shorttextbox") }}
     {% endif %}
     </div> 
 
@@ -87,7 +93,7 @@
     {{ entry('Number of dreams today', 'dreams', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Number of dreams this year', 'dreams_year', class="shorttextbox") }}
+    {{ entry('Number of dreams this year', 'dreams_this_year', class="shorttextbox") }}
     {% endif %}
     </div> 
 
@@ -144,9 +150,13 @@
 
 <div id="errortext" style="color: red"></div>
 {% if not form %}
-<a href="/createreport?date={{ report['datestring'] }}" style="text-decoration: none;">
+{% if preview %}
+<input type="submit" formaction="/createreport" formmethod="get" value="Edit" class="btn"/>
+{% else %}
+<a href="/createreport?date={{ report['date_string'] }}" style="text-decoration: none;">
 <input type="button" class="btn" value="Edit">
 </a>
+{% endif %}
 {% endif %}
 {% if form %}
 <input type="submit" class="btn" value="Preview" formaction="/previewreport" formmethod="get"/>
@@ -154,9 +164,11 @@
 {% elif preview %}
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% else %}
-<form id="delete-form" action="/deletereport/{{ report['datestring'] }}" method="post" style="display: inline;">
+{#  TODO: make deleting robust? There are a lot of issues, like updating the number of dreams
+<form id="delete-form" action="/deletereport/{{ report['date_string'] }}" method="post" style="display: inline;">
 <button onclick="delete_button_click()" class="btn">Delete</button>
 </form>
+#}
 {% endif %}
 
 </div> 
@@ -231,7 +243,7 @@ function validateAllEntries() {
 function prefillDate() {
     var today = new Date();
     var hours = today.getHours();
-    if (hours < 9) {
+    if (hours < 13) {
         today = new Date(today.getTime() - (24 * 60 * 60 * 1000));
     }
     var dd = today.getDate();
@@ -244,8 +256,10 @@ function prefillDate() {
         mm = '0'+mm;
     }
 
-    var datestring = '' + yyyy + '-' + mm + '-' + dd;
-    $("input[name='date']").val(datestring);
+    var date_string = '' + yyyy + '-' + mm + '-' + dd;
+    if (!$("input[name='date']").val()) {
+        $("input[name='date']").val(date_string);
+    }
 }
 
 $(document).ready(prefillDate);

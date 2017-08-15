@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 {% block body %}
-    <div class="centertext">
     {% if reports %}
+    <div class="fixedwidthreport">
+    <strong>Total yearly customers</strong>: <span>{{ global_stats.customers_this_year }}</span>
+    <br>
+    <strong>Total yearly dreams</strong>: <span> {{ global_stats.dreams_this_year }}</span>
+    <br>
+    <strong>Dreams remaining until goal</strong>: <span>
+    {% if global_stats.yearly_dream_goal - global_stats.dreams_this_year > 0 %}
+    {{ global_stats.yearly_dream_goal - global_stats.dreams_this_year }}
+    {% else %} 
+    0
+    {% endif %}
+    </span>
+        <br>
+        <br>
+        <br>
         Most recent reports: 
         <ul>
-        {% for report in reports[:10] %}
+        {% for report in reports %} {# assumes list is sorted #}
         <li>
-            <a href="/report/{{ report.datestring }}">{{ report.readable_datestring }}</a>
+            <a href="/report/{{ report.date_string }}">{{ report.readable_date_string }} ({{ report.dreams }} dreams)</a>
         </li>
         {% endfor %}
         </ul>
-    {% endif %}
     </div>
+    {% else %}
+    <div class="centertext">
+        No reports yet. Get to work!
+    </div>
+    {% endif %}
 {% endblock %}

@@ -93,8 +93,35 @@ class Report(ndb.Model):
 
     misc_notes = ndb.StringProperty()
 
+    def update(self, old_report):
+        '''
+        StringProperties are not checked for None because they can be "" which we don't want
+        '''
+        if old_report.customers_this_year is not None: self.customers_this_year = old_report.customers_this_year
+        if old_report.dreams_this_year is not None: self.dreams_this_year = old_report.dreams_this_year
+        if old_report.yearly_dream_goal is not None: self.yearly_dream_goal = old_report.yearly_dream_goal
+        if old_report.year_goal: self.year_goal = old_report.year_goal
+        if old_report.month_goal: self.month_goal = old_report.month_goal
+        if old_report.daily_dream_goal is not None: self.daily_dream_goal = old_report.daily_dream_goal
+        if old_report.date is not None: self.date = old_report.date
+        if old_report.customers_today is not None: self.customers_today = old_report.customers_today
+        if old_report.dreamers is not None: self.dreamers = old_report.dreamers
+        if old_report.dreams is not None: self.dreams = old_report.dreams
+        if old_report.working_members: self.working_members = old_report.working_members
+        if old_report.supporting_members: self.supporting_members = old_report.supporting_members
+        if old_report.visiting_members: self.visiting_members = old_report.visiting_members
+        if old_report.end_time is not None: self.end_time = old_report.end_time
+        if old_report.total_bowls is not None: self.total_bowls = old_report.total_bowls
+        if old_report.total_cups is not None: self.total_cups = old_report.total_cups
+        if old_report.chopsticks_missing is not None: self.chopsticks_missing = old_report.chopsticks_missing
+        if old_report.money_off_by is not None: self.money_off_by = old_report.money_off_by
+        if old_report.positive_cycle is not None: self.positive_cycle = old_report.positive_cycle
+        if old_report.achievement_rate is not None: self.achievement_rate = old_report.achievement_rate
+        if old_report.misc_notes: self.misc_notes = old_report.misc_notes
+
+
     @property
-    def datestring(self):
+    def date_string(self):
         ''' 2017-06-13 '''
         if self.date:
             return self.date.strftime('%Y-%m-%d')
@@ -102,7 +129,7 @@ class Report(ndb.Model):
             return None
 
     @property
-    def readable_datestring(self):
+    def readable_date_string(self):
         ''' Tuesday June 13, 2017 '''
         if self.date:
             return self.date.strftime('%A %B %d, %Y')
@@ -128,22 +155,22 @@ class ViewReportHandler(webapp2.RequestHandler):
     '''
     Handler to view details about a single report
     '''
-    def get(self, datestring):
+    def get(self, date_string):
         '''
-        Get corresponding report from datestring, if it exists. if not, 404
+        Get corresponding report from date_string, if it exists. if not, 404
         We should allow editing of a report, which takes you to CreateReportHandler with all the info already pre-filled in
         '''
         template_values = {}
-        report_key = ndb.Key(Report, datestring)
+        report_key = ndb.Key(Report, date_string)
         current_report = report_key.get()
         if current_report is None:
-            raise endpoints.NotFoundException("No report found for {}".format(datestring))
+            raise endpoints.NotFoundException("No report found for {}".format(date_string))
         report_dict = create_report_dict_from_report_obj(current_report)
         today_datetime = datetime.now()
         global_stats = get_global_stats()
         template_values['global_stats'] = global_stats
         template_values['report'] = report_dict
-        template_values['today_datestring'] = today_datetime.strftime('%Y-%m-%d')
+        template_values['today_date_string'] = today_datetime.strftime('%Y-%m-%d')
         template_values['hidetitleimg'] = True
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
@@ -205,15 +232,26 @@ def get_global_stats_vars(
         month_goal = current_global_stats.month_goal
         year_goal = current_global_stats.year_goal
         yearly_dream_goal = current_global_stats.yearly_dream_goal
-        dreams_this_year = current_global_stats.dreams_this_year + dreams
-        customers_this_year = current_global_stats.customers_this_year + customers_today
-        daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(date_obj.date()))
+        dreams_this_year = current_global_stats.dreams_this_year
+        customers_this_year = current_global_stats.customers_this_year
+        if dreams is not None:
+            dreams_this_year += dreams
+        if customers_today is not None:
+            customers_this_year += customers_today
+        if date_obj is not None:
+            daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(date_obj.date()))
+        else:
+            daily_dream_goal = current_global_stats.daily_dream_goal()
     else:
         month_goal = old_report.month_goal
         year_goal = old_report.year_goal
         yearly_dream_goal = old_report.yearly_dream_goal
-        dreams_this_year = old_report.dreams_this_year + dreams - old_report.dreams
-        customers_this_year = old_report.customers_this_year + customers_today - old_report.customers_today
+        dreams_this_year = old_report.dreams_this_year
+        customers_this_year = old_report.customers_this_year
+        if dreams is not None:
+            dreams_this_year += dreams - old_report.dreams
+        if customers_today is not None:
+            customers_this_year += customers_today - old_report.customers_today
         daily_dream_goal = old_report.daily_dream_goal
     return month_goal, year_goal, yearly_dream_goal, dreams_this_year, customers_this_year, daily_dream_goal
 
@@ -228,7 +266,7 @@ def get_achievement_rate(dreams, daily_dream_goal):
     return achievement_rate
 
 
-def get_report_from_request(request, update_global_stats=True):
+def get_report_from_request(request, update_global_stats, prev_date=None):
     '''
     Naming convention: 
     * when reporting numbers/count of things don't do num_* or count_* just say the thing
@@ -254,7 +292,10 @@ def get_report_from_request(request, update_global_stats=True):
     
     end_time_obj = get_time_obj(end_time)
     date_obj = get_date_obj(date)
-    old_report = get_old_report(date)
+    if prev_date:
+        old_report = get_old_report(prev_date)
+    else:
+        old_report = get_old_report(date)
     current_global_stats = get_global_stats()
     (month_goal,
      year_goal,
@@ -307,28 +348,31 @@ def get_report_from_request(request, update_global_stats=True):
 
 def create_report_dict_from_report_obj(current_report, preview=False):
     report_dict = {
-        # TODO: yearly dream goal goes here (from the snapshot). Why should displayreport use information from global_stats at all (when viewing a report) if there's a snapshot?
-        'year_goal': current_report.year_goal if current_report.year_goal else '',
-        'customers_year': current_report.customers_this_year if current_report.customers_this_year else '',
-        'dreams_year': current_report.dreams_this_year if current_report.dreams_this_year else '',
+        'daily_dream_goal': current_report.daily_dream_goal if current_report.daily_dream_goal is not None else '',
+        'yearly_dream_goal': current_report.yearly_dream_goal if current_report.yearly_dream_goal is not None else '',
+        'month_goal': current_report.month_goal if current_report.month_goal is not None else '',
+        'year_goal': current_report.year_goal if current_report.year_goal is not None else '',
+        'customers_this_year': current_report.customers_this_year if current_report.customers_this_year is not None else '',
+        'dreams_this_year': current_report.dreams_this_year if current_report.dreams_this_year is not None else '',
+
         'datetime_obj': current_report.date,
-        'date': current_report.date.strftime('%Y-%m-%d') if current_report.date else '',
-        'datestring': current_report.date.strftime('%Y-%m-%d') if current_report.date else '',
-        'readable_datestring': current_report.readable_datestring if current_report.readable_datestring else '',
-        'customers_today': current_report.customers_today if current_report.customers_today else '',
-        'dreams': current_report.dreams if current_report.dreams else '',
-        'dreamers': current_report.dreamers if current_report.dreamers else '',
-        'achievement_rate': '{:.2f}%'.format(current_report.achievement_rate) if current_report.achievement_rate else '', 
-        'working_members': current_report.working_members,
-        'supporting_members': current_report.supporting_members,
-        'visiting_members': current_report.visiting_members,
-        'end_time': current_report.end_time.strftime('%H:%M') if current_report.end_time else '',
-        'positive_cycle': current_report.positive_cycle if current_report.positive_cycle else '',
-        'total_bowls': current_report.total_cups if current_report.total_cups else '',
-        'total_cups': current_report.total_bowls if current_report.total_bowls else '',
-        'chopsticks_missing': current_report.chopsticks_missing if current_report.chopsticks_missing else '',
-        'money_off_by': current_report.money_off_by if current_report.money_off_by else '',
-        'misc_notes': current_report.misc_notes,
+        'date': current_report.date.strftime('%Y-%m-%d') if current_report.date is not None else '',
+        'date_string': current_report.date.strftime('%Y-%m-%d') if current_report.date is not None else '',
+        'readable_date_string': current_report.readable_date_string if current_report.readable_date_string is not None else '',
+        'customers_today': current_report.customers_today if current_report.customers_today is not None else '',
+        'dreams': current_report.dreams if current_report.dreams is not None else '',
+        'dreamers': current_report.dreamers if current_report.dreamers is not None else '',
+        'achievement_rate': '{:.2f}%'.format(current_report.achievement_rate) if current_report.achievement_rate is not None else '', 
+        'working_members': current_report.working_members if current_report.working_members is not None else '',
+        'supporting_members': current_report.supporting_members if current_report.supporting_members is not None else '',
+        'visiting_members': current_report.visiting_members if current_report.visiting_members is not None else '',
+        'end_time': current_report.end_time.strftime('%H:%M') if current_report.end_time is not None else '',
+        'positive_cycle': current_report.positive_cycle if current_report.positive_cycle is not None else '',
+        'total_bowls': current_report.total_cups if current_report.total_cups is not None else '',
+        'total_cups': current_report.total_bowls if current_report.total_bowls is not None else '',
+        'chopsticks_missing': current_report.chopsticks_missing if current_report.chopsticks_missing is not None else '',
+        'money_off_by': current_report.money_off_by if current_report.money_off_by is not None else '',
+        'misc_notes': current_report.misc_notes if current_report.misc_notes is not None else '',
     }
     return report_dict
 
@@ -344,15 +388,19 @@ class CreateReportHandler(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('createreport.html')
         date_string = self.request.get('date', '')
         current_report_key = ndb.Key(Report, date_string)
+        request_report = get_report_from_request(self.request, update_global_stats=False)
         if date_string:
-            current_report = current_report_key.get()
+            past_report = current_report_key.get()
+            if past_report is not None:
+                past_report.update(request_report)
+                current_report = past_report
+            else:
+                current_report = request_report
         else:
-            current_report = None
-        if current_report is not None:
-            report_dict = create_report_dict_from_report_obj(current_report)
-            template_values['report'] = report_dict
-        else:
-            template_values['report'] = {}
+            current_report = request_report
+        assert current_report is not None
+        report_dict = create_report_dict_from_report_obj(current_report)
+        template_values['report'] = report_dict
         template_values['global_stats'] = get_global_stats()
         template_values['hidetitleimg'] = True
         self.response.write(template.render(template_values))
@@ -360,10 +408,24 @@ class CreateReportHandler(webapp2.RequestHandler):
     def post(self):
         # get stuff from POST request
         # create a new Report object and save it to ndb
-        new_report = get_report_from_request(self.request, update_global_stats=True)
+        old_date_string = self.request.get('old_date_string', None)
+        new_report = get_report_from_request(self.request, update_global_stats=True, prev_date=old_date_string)
         new_report.put()
+        if old_date_string:
+            if old_date_string != new_report.date_string:
+                delete_report(old_date_string)
         report_page = '/report/' + new_report.date.strftime('%Y-%m-%d')
         self.redirect(report_page)
+
+
+def delete_report(date_string):
+    global_stats = get_global_stats()
+    old_report_key = ndb.Key(Report, date_string)
+    old_report = old_report_key.get()
+    global_stats.customers_this_year -= old_report.customers_today
+    global_stats.dreams_this_year -= old_report.dreams
+    global_stats.put()
+    old_report_key.delete()
 
 
 class PreviewReportHandler(webapp2.RequestHandler):
@@ -375,13 +437,15 @@ class PreviewReportHandler(webapp2.RequestHandler):
     def get(self):
         template_values = {}
         # create Report object based on self.request (using the same logic as ViewReportHandler)
-        current_report = get_report_from_request(self.request, update_global_stats=False)
+        old_date_string = self.request.get('old_date_string', None)
+        current_report = get_report_from_request(self.request, update_global_stats=False, prev_date=old_date_string)
         report_dict = create_report_dict_from_report_obj(current_report, preview=True)
         global_stats = get_global_stats()
         template_values['global_stats'] = global_stats
         template_values['report'] = report_dict
         template_values['preview'] = True
         template_values['hidetitleimg'] = True
+        template_values['old_date_string'] = old_date_string
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
 
@@ -408,13 +472,13 @@ class EditGoalHandler(webapp2.RequestHandler):
         global_stats.month_goal = month_goal
         global_stats.year_goal = year_goal
         global_stats.put()
-        self.get()
+        self.redirect('/')
 
 
 class DeleteReportHandler(webapp2.RequestHandler):
-    def post(self, datestring):
+    def post(self, date_string):
         # TODO: get all report objects with a date greater than this one and decrement their yearly snapshots by the amount in this report
-        report_key = ndb.Key(Report, datestring)
+        report_key = ndb.Key(Report, date_string)
         report = report_key.get()
         # delete dreams/customers from this report from the global stats
         global_stats = get_global_stats()
@@ -433,6 +497,10 @@ class MainHandler(webapp2.RequestHandler):
         # list of most recent reports
         # total number of dreams
         # average number of dreams per diem
+        template_values['global_stats'] = get_global_stats()
+        all_reports = [x for x in Report.query().iter()]
+        sorted_reports = sorted(all_reports, key=lambda x: x.date, reverse=True)
+        template_values['reports'] = sorted_reports
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))
 
@@ -444,5 +512,5 @@ app = webapp2.WSGIApplication([
     (r'/previewreport', PreviewReportHandler),
     (r'/editgoals', EditGoalHandler),
     (r'/deletereport/(\d\d\d\d-\d\d-\d\d)', DeleteReportHandler),
-    (r'/', ViewAllReportsHandler),
+    (r'/', MainHandler),
 ], debug=True)
