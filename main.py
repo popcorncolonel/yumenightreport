@@ -221,6 +221,7 @@ def get_global_stats_vars(
     date_obj,
     dreams,
     customers_today,
+    overwriting_report, # The report we're overwriting
 ):
     '''
     Gets the current global stats variables from global_stats if `old_report` is None,
@@ -253,6 +254,9 @@ def get_global_stats_vars(
         if customers_today is not None:
             customers_this_year += customers_today - old_report.customers_today
         daily_dream_goal = old_report.daily_dream_goal
+    if overwriting_report is not None and overwriting_report != old_report:
+        dreams_this_year -= overwriting_report.dreams
+        customers_this_year -= overwriting_report.customers_today
     return month_goal, year_goal, yearly_dream_goal, dreams_this_year, customers_this_year, daily_dream_goal
 
 
@@ -289,13 +293,15 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     money_off_by = get_integer_input(request, 'money_off_by')
     positive_cycle = get_integer_input(request, 'positive_cycle')
     misc_notes = request.get('misc_notes', '')
-    
+
     end_time_obj = get_time_obj(end_time)
     date_obj = get_date_obj(date)
+
+    overwriting_report = get_old_report(date)  # overwriting_report is the report we're overwriting by saving this report
     if prev_date:
-        old_report = get_old_report(prev_date)
+        old_report = get_old_report(prev_date) # old_report is the report we're modifying
     else:
-        old_report = get_old_report(date)
+        old_report = None
     current_global_stats = get_global_stats()
     (month_goal,
      year_goal,
@@ -308,13 +314,17 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
         date_obj,
         dreams,
         customers_today,
+        overwriting_report,
     )
     achievement_rate = get_achievement_rate(dreams, daily_dream_goal)
 
     if update_global_stats:
-        if old_report:
+        if old_report is not None:
             current_global_stats.customers_this_year -= old_report.customers_today
             current_global_stats.dreams_this_year -= old_report.dreams
+        if overwriting_report is not None:
+            current_global_stats.customers_this_year -= overwriting_report.customers_today
+            current_global_stats.dreams_this_year -= overwriting_report.dreams
         current_global_stats.customers_this_year += customers_today
         current_global_stats.dreams_this_year += dreams
         current_global_stats.put()
@@ -418,16 +428,6 @@ class CreateReportHandler(webapp2.RequestHandler):
         self.redirect(report_page)
 
 
-def delete_report(date_string):
-    global_stats = get_global_stats()
-    old_report_key = ndb.Key(Report, date_string)
-    old_report = old_report_key.get()
-    global_stats.customers_this_year -= old_report.customers_today
-    global_stats.dreams_this_year -= old_report.dreams
-    global_stats.put()
-    old_report_key.delete()
-
-
 class PreviewReportHandler(webapp2.RequestHandler):
     '''
     Handler to preview a report.
@@ -475,16 +475,22 @@ class EditGoalHandler(webapp2.RequestHandler):
         self.redirect('/')
 
 
+def delete_report(date_string, update_global_stats=False):
+    # TODO: get all report objects with a date greater than this one and decrement their yearly snapshots by the amount in this report
+    old_report_key = ndb.Key(Report, date_string)
+    if update_global_stats:
+        old_report = old_report_key.get()
+        if old_report:
+            global_stats = get_global_stats()
+            global_stats.customers_this_year -= old_report.customers_today
+            global_stats.dreams_this_year -= old_report.dreams
+            global_stats.put()
+    old_report_key.delete()
+
+
 class DeleteReportHandler(webapp2.RequestHandler):
     def post(self, date_string):
-        # TODO: get all report objects with a date greater than this one and decrement their yearly snapshots by the amount in this report
-        report_key = ndb.Key(Report, date_string)
-        report = report_key.get()
-        # delete dreams/customers from this report from the global stats
-        global_stats = get_global_stats()
-        global_stats.customers_this_year -= report.customers_today
-        global_stats.dreams_this_year -= report.dreams
-        report_key.delete()
+        delete_report(date_string, update_global_stats=True)
         self.redirect('/')
 
 
