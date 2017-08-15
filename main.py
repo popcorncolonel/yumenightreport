@@ -45,8 +45,8 @@ class GlobalStats(ndb.Model):
 def initialize_global_stats():
     global_stats = GlobalStats(
         id="global_stats",
-        customers_this_year=26108-182,
-        dreams_this_year=25484-135,
+        customers_this_year=26108,#-182,
+        dreams_this_year=25484,#-135,
         yearly_dream_goal=40000,
         year_goal="Say less",
         month_goal="",
@@ -181,6 +181,7 @@ Helper functions for `get_report_from_request`
 def get_integer_input(request, key, default=None):
     val = request.get(key, default)
     if val is not None and val != '':
+        val = val.replace('$', '')
         int_val = int(val)
     else:
         int_val = None
@@ -323,8 +324,9 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
             current_global_stats.customers_this_year -= old_report.customers_today
             current_global_stats.dreams_this_year -= old_report.dreams
         if overwriting_report is not None:
-            current_global_stats.customers_this_year -= overwriting_report.customers_today
-            current_global_stats.dreams_this_year -= overwriting_report.dreams
+            if old_report is None or old_report.date_string != overwriting_report.date_string:
+                current_global_stats.customers_this_year -= overwriting_report.customers_today
+                current_global_stats.dreams_this_year -= overwriting_report.dreams
         current_global_stats.customers_this_year += customers_today
         current_global_stats.dreams_this_year += dreams
         current_global_stats.put()

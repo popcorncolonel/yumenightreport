@@ -1,22 +1,22 @@
 {# lists all the relevant things either with a form or in a div, optionally #}
 {% if form %}
-{% macro entry(type_of_data, name, value=None, class="", type="text") -%}
+{% macro entry(type_of_data, name, value=None, class="", type="text", prefix="") -%}
     {% if report %}
     {% if name in report %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}' type='{{ type }}'/>
     {% else %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
     {% elif value == None %}
-    {{ type_of_data }}: <input name='{{ name }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' class='{{ class }}' type='{{ type }}'/>
     {% else %}
-    {{ type_of_data }}: <input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
 {%- endmacro %}
 {% else %}
     {# then the `report` variable exists #}
-{% macro entry(type_of_data, name, value=None, class="", type="text") -%}
-    <strong>{{ type_of_data }}</strong>: <span name='{{ name }}'> {{ report[name] }} </span>
+{% macro entry(type_of_data, name, value=None, class="", type="text", prefix="") -%}
+    <strong>{{ type_of_data }}</strong>: {{ prefix }}<span name='{{ name }}'>{{ report[name] }}</span>
     {% if preview %}
     <input name='{{ name }}' value="{{ report[name] }}" type="hidden"/>
     {% endif %}
@@ -126,7 +126,7 @@
     {{ entry("End time", "end_time") }}
     {% endif %}
     {{ hspace() }}
-    {{ entry("Positive cycle", "positive_cycle", type="number", class="shorttextbox") }}
+    {{ entry("Positive cycle", "positive_cycle", type="number", class="shorttextbox", prefix="$") }}
     </div> 
 
     <div class="textcenter">
@@ -138,7 +138,7 @@
     <div class="textcenter">
     {{ entry("Chopsticks missing", "chopsticks_missing", type="number", class="shorttextbox") }}
     {{ hspace() }}
-    {{ entry("Money off by", "money_off_by", type="number", class="shorttextbox") }}
+    {{ entry("Money off by", "money_off_by", type="number", class="shorttextbox", prefix="$") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -222,7 +222,7 @@ function validateAllEntries() {
         'chopsticks_missing': /^\d+$/,
         'positive_cycle': /^\d+$/,
         'total_cups': /^\d+$/,
-        'money_off_by': /^\d+$/,
+        'money_off_by': /^\$?\-?\d+$/,
 
         'misc_notes': /^.*$/,
     }

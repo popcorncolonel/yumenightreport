@@ -17,7 +17,11 @@ body{
 }
 
 .fixedwidthreport {
+    width: 95%;
+    min-width: 750px;
+    /*
     width: 600px;
+    */
     margin: 0 auto;
     padding: 10px;
     background-color: white;
