@@ -121,7 +121,6 @@ class Report(ndb.Model):
         if old_report.achievement_rate is not None: self.achievement_rate = old_report.achievement_rate
         if old_report.misc_notes: self.misc_notes = old_report.misc_notes
 
-
     @property
     def date_string(self):
         ''' 2017-06-13 '''
@@ -176,6 +175,7 @@ class ViewReportHandler(webapp2.RequestHandler):
         template_values['hidetitleimg'] = True
         template = JINJA_ENVIRONMENT.get_template('report.html')
         self.response.write(template.render(template_values))
+
 
 '''
 Helper functions for `get_report_from_request`
@@ -480,7 +480,7 @@ class EditGoalHandler(webapp2.RequestHandler):
 
 
 def delete_report(date_string, update_global_stats=False):
-    # TODO: get all report objects with a date greater than this one and decrement their yearly snapshots by the amount in this report
+    # TODO: get all report objects with a date greater than this one (but in the same year) and decrement their yearly snapshots by the amount in this report
     old_report_key = ndb.Key(Report, date_string)
     if update_global_stats:
         old_report = old_report_key.get()
