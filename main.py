@@ -19,7 +19,7 @@ def get_working_days_left_in_year(date_obj):
     end_year = date(date_obj.year, month=12, day=31)
     days_until_year_end = (end_year - date_obj).days
     # exclude sundays & mondays
-    working_days_until_year_end = int((5./7.) * days_until_year_end) 
+    working_days_until_year_end = max(0, int((6./7.) * days_until_year_end) - 4)
     return working_days_until_year_end
 
 
@@ -39,6 +39,8 @@ class GlobalStats(ndb.Model):
             if datetime_obj is None:
                 datetime_obj = datetime.now()
             working_days_left_in_year = get_working_days_left_in_year(datetime_obj.date())
+        if working_days_left_in_year == 0:
+            return 0.
         return dreams_remaining / working_days_left_in_year
 
 
@@ -218,11 +220,11 @@ def get_old_report(date):
 
 def get_global_stats_vars(
     current_global_stats,
-    old_report,
+    old_report, # The report from the previous date
+    overwriting_report, # The report we're overwriting
     date_obj,
     dreams,
     customers_today,
-    overwriting_report, # The report we're overwriting
 ):
     '''
     Gets the current global stats variables from global_stats if `old_report` is None,
@@ -312,10 +314,10 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
      daily_dream_goal) = get_global_stats_vars(
         current_global_stats,
         old_report,
+        overwriting_report,
         date_obj,
         dreams,
         customers_today,
-        overwriting_report,
     )
     achievement_rate = get_achievement_rate(dreams, daily_dream_goal)
 

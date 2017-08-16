@@ -24,7 +24,7 @@
 {% endif %}
 
 {% macro hspace() -%}
-    <span style="padding-left: 40px;"> &nbsp; </span>
+    <span style="padding-left: 20px;"> &nbsp; </span>
 {%- endmacro %}
 
 {% if form %}
@@ -90,15 +90,15 @@
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreams today', 'dreams', type="number", class="shorttextbox") }}
+    {{ entry('Dreams today', 'dreams', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Number of dreams this year', 'dreams_this_year', class="shorttextbox") }}
+    {{ entry('Dreams this year', 'dreams_this_year', class="shorttextbox") }}
     {% endif %}
     </div> 
 
     <div class="textcenter">
-    {{ entry('Number of dreamers today', 'dreamers', type="number", class="shorttextbox") }}
+    {{ entry('Dreamers today', 'dreamers', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
     {{ entry('Dream achievement rate', 'achievement_rate', class="shorttextbox") }}
