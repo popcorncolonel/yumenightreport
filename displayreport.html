@@ -81,28 +81,36 @@
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
-    <div class="textcenter">
-    {{ entry('Customers today', 'customers_today', type="number", class="shorttextbox") }}
     {% if not form %}
-    {{ hspace() }}
+    <div class="textcenter">
     {{ entry('Customers this year', 'customers_this_year', class="shorttextbox") }}
-    {% endif %}
     </div> 
-
     <div class="textcenter">
-    {{ entry('Dreams today', 'dreams', type="number", class="shorttextbox") }}
-    {% if not form %}
-    {{ hspace() }}
     {{ entry('Dreams this year', 'dreams_this_year', class="shorttextbox") }}
+    </div> 
+    <div class="textcenter">
+    {{ entry('Dream achievement rate', 'achievement_rate', class="shorttextbox") }}
+    </div> 
+
+    <hr style="margin-top: 20px; margin-bottom: 20px">
     {% endif %}
+
+    <div class="textcenter">
+    {{ entry('Lunch customers today', 'lunch_customers_today', type="number", class="shorttextbox") }}
+    {{ hspace() }}
+    {{ entry('Dinner customers today', 'dinner_customers_today', type="number", class="shorttextbox") }}
     </div> 
 
     <div class="textcenter">
-    {{ entry('Dreamers today', 'dreamers', type="number", class="shorttextbox") }}
-    {% if not form %}
+    {{ entry('Lunch dreams today', 'lunch_dreams', type="number", class="shorttextbox") }}
     {{ hspace() }}
-    {{ entry('Dream achievement rate', 'achievement_rate', class="shorttextbox") }}
-    {% endif %}
+    {{ entry('Dinner dreams today', 'dinner_dreams', type="number", class="shorttextbox") }}
+    </div> 
+
+    <div class="textcenter">
+    {{ entry('Lunch dreamers today', 'lunch_dreamers', type="number", class="shorttextbox") }}
+    {{ hspace() }}
+    {{ entry('Dinner dreamers today', 'dinner_dreamers', type="number", class="shorttextbox") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -209,9 +217,12 @@ function validateAllEntries() {
     var regexes = {
         'date': /^\d\d\d\d-\d\d-\d\d$/,
 
-        'customers_today': /^\d+$/,
-        'dreams': /^\d+$/,
-        'dreamers': /^\d+$/,
+        'lunch_customers_today': /^\d+$/,
+        'lunch_dreams': /^\d+$/,
+        'lunch_dreamers': /^\d+$/,
+        'dinner_customers_today': /^\d+$/,
+        'dinner_dreams': /^\d+$/,
+        'dinner_dreamers': /^\d+$/,
 
         'working_members': /^.+$/,
         'supporting_members': /^.+$/,

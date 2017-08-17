@@ -78,9 +78,15 @@ class Report(ndb.Model):
     daily_dream_goal = ndb.IntegerProperty()
 
     date = ndb.DateTimeProperty()
+    lunch_customers_today = ndb.IntegerProperty()
+    dinner_customers_today = ndb.IntegerProperty()
     customers_today = ndb.IntegerProperty()
-    dreamers = ndb.IntegerProperty()
+    lunch_dreams = ndb.IntegerProperty()
+    dinner_dreams = ndb.IntegerProperty()
     dreams = ndb.IntegerProperty()
+    lunch_dreamers = ndb.IntegerProperty()
+    dinner_dreamers = ndb.IntegerProperty()
+    dreamers = ndb.IntegerProperty()
        
     working_members = ndb.StringProperty()
     supporting_members = ndb.StringProperty()
@@ -107,8 +113,14 @@ class Report(ndb.Model):
         if old_report.daily_dream_goal is not None: self.daily_dream_goal = old_report.daily_dream_goal
         if old_report.date is not None: self.date = old_report.date
         if old_report.customers_today is not None: self.customers_today = old_report.customers_today
-        if old_report.dreamers is not None: self.dreamers = old_report.dreamers
+        if old_report.lunch_customers_today is not None: self.lunch_customers_today = old_report.lunch_customers_today
+        if old_report.dinner_customers_today is not None: self.dinner_customers_today = old_report.dinner_customers_today
         if old_report.dreams is not None: self.dreams = old_report.dreams
+        if old_report.lunch_dreams is not None: self.lunch_dreams = old_report.lunch_dreams
+        if old_report.dinner_dreams is not None: self.dinner_dreams = old_report.dinner_dreams
+        if old_report.dreamers is not None: self.dreamers = old_report.dreamers
+        if old_report.lunch_dreamers is not None: self.lunch_dreamers = old_report.lunch_dreamers
+        if old_report.dinner_dreamers is not None: self.dinner_dreamers = old_report.dinner_dreamers
         if old_report.working_members: self.working_members = old_report.working_members
         if old_report.supporting_members: self.supporting_members = old_report.supporting_members
         if old_report.visiting_members: self.visiting_members = old_report.visiting_members
@@ -273,6 +285,27 @@ def get_achievement_rate(dreams, daily_dream_goal):
     return achievement_rate
 
 
+def get_totals(
+    lunch_customers_today,
+    dinner_customers_today,
+    lunch_dreams,
+    dinner_dreams,
+    lunch_dreamers,
+    dinner_dreamers,
+    ):
+    if lunch_customers_today is not None and dinner_customers_today is not None:
+        customers_today = lunch_customers_today + dinner_customers_today
+    else:
+        customers_today = None
+    if lunch_dreams is not None and dinner_dreams is not None:
+        dreams = lunch_dreams + dinner_dreams
+    else:
+        dreams = None
+    if lunch_dreamers is not None and dinner_dreamers is not None:
+        dreamers = lunch_dreamers + dinner_dreamers
+    else:
+        dreamers = None
+    return customers_today, dreams, dreamers
 def get_report_from_request(request, update_global_stats, prev_date=None):
     '''
     Naming convention: 
@@ -283,9 +316,12 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     * variable name and key name need to be the same
     '''
     date = request.get('date', '')
-    customers_today = get_integer_input(request, 'customers_today')
-    dreamers = get_integer_input(request, 'dreamers')
-    dreams = get_integer_input(request, 'dreams')
+    lunch_customers_today = get_integer_input(request, 'lunch_customers_today')
+    dinner_customers_today = get_integer_input(request, 'dinner_customers_today')
+    lunch_dreams = get_integer_input(request, 'lunch_dreams')
+    dinner_dreams = get_integer_input(request, 'dinner_dreams')
+    lunch_dreamers = get_integer_input(request, 'lunch_dreamers')
+    dinner_dreamers = get_integer_input(request, 'dinner_dreamers')
     working_members = request.get('working_members', '')
     supporting_members = request.get('supporting_members', '')
     visiting_members = request.get('visiting_members', '')
@@ -295,6 +331,15 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     chopsticks_missing = get_integer_input(request,'chopsticks_missing')
     money_off_by = get_integer_input(request, 'money_off_by')
     positive_cycle = get_integer_input(request, 'positive_cycle')
+
+    customers_today, dreams, dreamers = get_totals(
+        lunch_customers_today,
+        dinner_customers_today,
+        lunch_dreams,
+        dinner_dreams,
+        lunch_dreamers,
+        dinner_dreamers,
+    )
     misc_notes = request.get('misc_notes', '')
 
     end_time_obj = get_time_obj(end_time)
@@ -336,9 +381,15 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     return Report(
         id=date, 
         date=date_obj, 
+        lunch_customers_today=lunch_customers_today,
+        dinner_customers_today=dinner_customers_today,
         customers_today=customers_today,
-        dreamers=dreamers,
+        lunch_dreams=lunch_dreams,
+        dinner_dreams=dinner_dreams,
         dreams=dreams,
+        lunch_dreamers=lunch_dreamers,
+        dinner_dreamers=dinner_dreamers,
+        dreamers=dreamers,
         working_members=working_members,
         supporting_members=supporting_members,
         visiting_members=visiting_members,
@@ -373,8 +424,14 @@ def create_report_dict_from_report_obj(current_report, preview=False):
         'date': current_report.date.strftime('%Y-%m-%d') if current_report.date is not None else '',
         'date_string': current_report.date.strftime('%Y-%m-%d') if current_report.date is not None else '',
         'readable_date_string': current_report.readable_date_string if current_report.readable_date_string is not None else '',
+        'lunch_customers_today': current_report.lunch_customers_today if current_report.lunch_customers_today is not None else '',
+        'dinner_customers_today': current_report.dinner_customers_today if current_report.dinner_customers_today is not None else '',
         'customers_today': current_report.customers_today if current_report.customers_today is not None else '',
+        'lunch_dreams': current_report.lunch_dreams if current_report.lunch_dreams is not None else '',
+        'dinner_dreams': current_report.dinner_dreams if current_report.dinner_dreams is not None else '',
         'dreams': current_report.dreams if current_report.dreams is not None else '',
+        'lunch_dreamers': current_report.lunch_dreamers if current_report.lunch_dreamers is not None else '',
+        'dinner_dreamers': current_report.dinner_dreamers if current_report.dinner_dreamers is not None else '',
         'dreamers': current_report.dreamers if current_report.dreamers is not None else '',
         'achievement_rate': '{:.2f}%'.format(current_report.achievement_rate) if current_report.achievement_rate is not None else '', 
         'working_members': current_report.working_members if current_report.working_members is not None else '',
