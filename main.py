@@ -565,7 +565,7 @@ class MainHandler(webapp2.RequestHandler):
         # total number of dreams
         # average number of dreams per diem
         template_values['global_stats'] = get_global_stats()
-        recent_reports = [x for x in Report.query().fetch(limit=10)]
+        recent_reports = [x for x in Report.query().fetch(limit=100)]
         sorted_reports = sorted(recent_reports, key=lambda x: x.date, reverse=True)
         template_values['reports'] = sorted_reports
         template = JINJA_ENVIRONMENT.get_template('index.html')
