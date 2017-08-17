@@ -1,7 +1,11 @@
-body{
+body {
     font-family: 'Open Sans', sans-serif;
     font-size: 14px;
     height: 100%;
+}
+
+a:visited {
+    color: blue;
 }
 
 .content {
