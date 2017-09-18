@@ -1,10 +1,12 @@
 import endpoints
 import jinja2
+import logging
 import os
 import webapp2
 
 from google.appengine.ext import ndb
 from datetime import datetime, date
+import datetime
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -16,7 +18,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 def get_working_days_left_in_year(date_obj):
     ''' date_obj must be a `date` object. Returns the number of days left in the year of date_obj '''
-    end_year = date(date_obj.year, month=12, day=31)
+    end_year = datetime.date(date_obj.year, month=12, day=31)
     days_until_year_end = (end_year - date_obj).days
     # exclude sundays & mondays
     working_days_until_year_end = max(0, int((6./7.) * days_until_year_end) - 4)
@@ -37,7 +39,7 @@ class GlobalStats(ndb.Model):
         dreams_remaining = max(0, self.yearly_dream_goal - self.dreams_this_year)
         if working_days_left_in_year is None:
             if datetime_obj is None:
-                datetime_obj = datetime.now()
+                datetime_obj = datetime.datetime.now()
             working_days_left_in_year = get_working_days_left_in_year(datetime_obj.date())
         if working_days_left_in_year == 0:
             return 0.
@@ -47,9 +49,9 @@ class GlobalStats(ndb.Model):
 def initialize_global_stats():
     global_stats = GlobalStats(
         id="global_stats",
-        customers_this_year=26108,#-182,
-        dreams_this_year=25484,#-135,
-        yearly_dream_goal=40000,
+        customers_this_year=1000,#-182,
+        dreams_this_year=1000,#-135,
+        yearly_dream_goal=100000,
         year_goal="Say less",
         month_goal="",
     )
@@ -179,7 +181,7 @@ class ViewReportHandler(webapp2.RequestHandler):
         if current_report is None:
             raise endpoints.NotFoundException("No report found for {}".format(date_string))
         report_dict = create_report_dict_from_report_obj(current_report)
-        today_datetime = datetime.now()
+        today_datetime = datetime.datetime.now()
         global_stats = get_global_stats()
         template_values['global_stats'] = global_stats
         template_values['report'] = report_dict
@@ -205,9 +207,9 @@ def get_integer_input(request, key, default=None):
 def get_time_obj(end_time):
     if end_time:
         if ':' in end_time:
-            end_time_obj = datetime.strptime(end_time, '%H:%M').time()  # deal w/ am/pm?
+            end_time_obj = datetime.datetime.strptime(end_time, '%H:%M').time()  # deal w/ am/pm?
         else:
-            end_time_obj = datetime.strptime(end_time, '%H%M').time()  # deal w/ am/pm?
+            end_time_obj = datetime.datetime.strptime(end_time, '%H%M').time()  # deal w/ am/pm?
     else:
         end_time_obj = None
     return end_time_obj
@@ -215,7 +217,7 @@ def get_time_obj(end_time):
 
 def get_date_obj(date):
     if date:
-        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
     else:
         date_obj = None
     return date_obj
@@ -262,16 +264,24 @@ def get_global_stats_vars(
         month_goal = old_report.month_goal
         year_goal = old_report.year_goal
         yearly_dream_goal = old_report.yearly_dream_goal
-        dreams_this_year = old_report.dreams_this_year
-        customers_this_year = old_report.customers_this_year
+        dreams_this_year = old_report.dreams_this_year or current_global_stats.dreams_this_year
+        customers_this_year = old_report.customers_this_year or current_global_stats.customers_this_year
         if dreams is not None:
-            dreams_this_year += dreams - old_report.dreams
+            dreams_this_year += dreams
         if customers_today is not None:
-            customers_this_year += customers_today - old_report.customers_today
+            customers_this_year += customers_today
+
+        if old_report.dreams:
+            dreams_this_year -= old_report.dreams
+        if old_report.customers_today:
+            customers_this_year -= old_report.customers_today
+
         daily_dream_goal = old_report.daily_dream_goal
     if overwriting_report is not None and overwriting_report != old_report:
-        dreams_this_year -= overwriting_report.dreams
-        customers_this_year -= overwriting_report.customers_today
+        if overwriting_report.dreams:
+            dreams_this_year -= overwriting_report.dreams
+        if overwriting_report.customers_today:
+            customers_this_year -= overwriting_report.customers_today
     return month_goal, year_goal, yearly_dream_goal, dreams_this_year, customers_this_year, daily_dream_goal
 
 
@@ -285,27 +295,29 @@ def get_achievement_rate(dreams, daily_dream_goal):
     return achievement_rate
 
 
-def get_totals(
+def get_dinner_totals(
     lunch_customers_today,
-    dinner_customers_today,
+    customers_today,
     lunch_dreams,
-    dinner_dreams,
+    dreams,
     lunch_dreamers,
-    dinner_dreamers,
+    dreamers,
     ):
-    if lunch_customers_today is not None and dinner_customers_today is not None:
-        customers_today = lunch_customers_today + dinner_customers_today
+    if lunch_customers_today is not None and customers_today is not None:
+        dinner_customers_today = customers_today - lunch_customers_today
     else:
-        customers_today = None
-    if lunch_dreams is not None and dinner_dreams is not None:
-        dreams = lunch_dreams + dinner_dreams
+        dinner_customers_today = None
+    if lunch_dreams is not None and dreams is not None:
+        dinner_dreams = dreams - lunch_dreams
     else:
-        dreams = None
-    if lunch_dreamers is not None and dinner_dreamers is not None:
-        dreamers = lunch_dreamers + dinner_dreamers
+        dinner_dreams = None
+    if lunch_dreamers is not None and dreamers is not None:
+        dinner_dreamers = dreamers - lunch_dreamers
     else:
-        dreamers = None
-    return customers_today, dreams, dreamers
+        dinner_dreamers = None
+    return dinner_customers_today, dinner_dreams, dinner_dreamers
+
+
 def get_report_from_request(request, update_global_stats, prev_date=None):
     '''
     Naming convention: 
@@ -317,11 +329,11 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     '''
     date = request.get('date', '')
     lunch_customers_today = get_integer_input(request, 'lunch_customers_today')
-    dinner_customers_today = get_integer_input(request, 'dinner_customers_today')
+    customers_today = get_integer_input(request, 'customers_today')
     lunch_dreams = get_integer_input(request, 'lunch_dreams')
-    dinner_dreams = get_integer_input(request, 'dinner_dreams')
+    dreams = get_integer_input(request, 'dreams')
     lunch_dreamers = get_integer_input(request, 'lunch_dreamers')
-    dinner_dreamers = get_integer_input(request, 'dinner_dreamers')
+    dreamers = get_integer_input(request, 'dreamers')
     working_members = request.get('working_members', '')
     supporting_members = request.get('supporting_members', '')
     visiting_members = request.get('visiting_members', '')
@@ -332,13 +344,13 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     money_off_by = get_integer_input(request, 'money_off_by')
     positive_cycle = get_integer_input(request, 'positive_cycle')
 
-    customers_today, dreams, dreamers = get_totals(
+    dinner_customers_today, dinner_dreams, dinner_dreamers = get_dinner_totals(
         lunch_customers_today,
-        dinner_customers_today,
+        customers_today,
         lunch_dreams,
-        dinner_dreams,
+        dreams,
         lunch_dreamers,
-        dinner_dreamers,
+        dreamers,
     )
     misc_notes = request.get('misc_notes', '')
 
@@ -366,14 +378,18 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     )
     achievement_rate = get_achievement_rate(dreams, daily_dream_goal)
 
-    if update_global_stats:
+    if update_global_stats and customers_today and dreams and dreamers:
         if old_report is not None:
-            current_global_stats.customers_this_year -= old_report.customers_today
-            current_global_stats.dreams_this_year -= old_report.dreams
+            if old_report.customers_today:
+                current_global_stats.customers_this_year -= old_report.customers_today
+            if old_report.dreams:
+                current_global_stats.dreams_this_year -= old_report.dreams
         if overwriting_report is not None:
             if old_report is None or old_report.date_string != overwriting_report.date_string:
-                current_global_stats.customers_this_year -= overwriting_report.customers_today
-                current_global_stats.dreams_this_year -= overwriting_report.dreams
+                if overwriting_report.customers_today:
+                    current_global_stats.customers_this_year -= overwriting_report.customers_today
+                if overwriting_report.dreams:
+                    current_global_stats.dreams_this_year -= overwriting_report.dreams
         current_global_stats.customers_this_year += customers_today
         current_global_stats.dreams_this_year += dreams
         current_global_stats.put()
@@ -458,10 +474,13 @@ class CreateReportHandler(webapp2.RequestHandler):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('createreport.html')
         date_string = self.request.get('date', '')
+        if date_string == '':
+            date_string = (datetime.datetime.now() - datetime.timedelta(hours=12)).strftime('%Y-%m-%d')
         current_report_key = ndb.Key(Report, date_string)
         request_report = get_report_from_request(self.request, update_global_stats=False)
         if date_string:
             past_report = current_report_key.get()
+            logging.info('past_report: {}'.format(past_report))
             if past_report is not None:
                 past_report.update(request_report)
                 current_report = past_report
@@ -564,9 +583,11 @@ class MainHandler(webapp2.RequestHandler):
         # list of most recent reports
         # total number of dreams
         # average number of dreams per diem
+        #initialize_global_stats() 
         template_values['global_stats'] = get_global_stats()
         recent_reports = [x for x in Report.query().fetch(limit=100)]
         sorted_reports = sorted(recent_reports, key=lambda x: x.date, reverse=True)
+        sorted_reports = [report for report in sorted_reports if report.dreams and report.customers_today and report.dreamers]  # ignore incomplete reports
         template_values['reports'] = sorted_reports
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))

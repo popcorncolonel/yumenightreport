@@ -1,21 +1,21 @@
 {# lists all the relevant things either with a form or in a div, optionally #}
 {% if form %}
-{% macro entry(type_of_data, name, value=None, class="", type="text", prefix="") -%}
+{% macro entry(type_of_data, name, value=None, class="", type="text", prefix="", input_html_tag="input") -%}
     {% if report %}
     {% if name in report %}
-    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' value='{{ report[name] }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<{{ input_html_tag }} name='{{ name }}' value='{{ report[name] }}' class='{{ class }}' type='{{ type }}'/>
     {% else %}
-    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<{{ input_html_tag }} name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
     {% elif value == None %}
-    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<{{ input_html_tag }} name='{{ name }}' class='{{ class }}' type='{{ type }}'/>
     {% else %}
-    {{ type_of_data }}: {{ prefix }}<input name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
+    {{ type_of_data }}: {{ prefix }}<{{ input_html_tag }} name='{{ name }}' value='{{ value }}' class='{{ class }}' type='{{ type }}'/>
     {% endif %}
 {%- endmacro %}
 {% else %}
     {# then the `report` variable exists #}
-{% macro entry(type_of_data, name, value=None, class="", type="text", prefix="") -%}
+{% macro entry(type_of_data, name, value=None, class="", type="text", prefix="", input_html_tag="") -%}
     <strong>{{ type_of_data }}</strong>: {{ prefix }}<span name='{{ name }}'>{{ report[name] }}</span>
     {% if preview %}
     <input name='{{ name }}' value="{{ report[name] }}" type="hidden"/>
@@ -28,7 +28,7 @@
 {%- endmacro %}
 
 {% if form %}
-<form action="/previewreport" method="GET">
+<form action="/previewreport" method="GET" id="preview_or_submit_form">
 {% elif preview %}
 <form action="/createreport" method="POST">
 {% endif %}
@@ -97,32 +97,32 @@
 
     <div class="textcenter">
     {{ entry('Lunch customers today', 'lunch_customers_today', type="number", class="shorttextbox") }}
-    {{ hspace() }}
-    {{ entry('Dinner customers today', 'dinner_customers_today', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Total customers', 'customers_today', type="number", class="shorttextbox") }}
+    {{ entry('Dinner customers today', 'dinner_customers_today', type="number", class="shorttextbox") }}
     {% endif %}
+    {{ hspace() }}
+    {{ entry('Total customers', 'customers_today', type="number", class="shorttextbox") }}
     </div> 
 
     <div class="textcenter">
     {{ entry('Lunch dreams today', 'lunch_dreams', type="number", class="shorttextbox") }}
-    {{ hspace() }}
-    {{ entry('Dinner dreams today', 'dinner_dreams', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Total dreams', 'dreams', type="number", class="shorttextbox") }}
+    {{ entry('Dinner dreams today', 'dinner_dreams', type="number", class="shorttextbox") }}
     {% endif %}
+    {{ hspace() }}
+    {{ entry('Total dreams', 'dreams', type="number", class="shorttextbox") }}
     </div> 
 
     <div class="textcenter">
     {{ entry('Lunch dreamers today', 'lunch_dreamers', type="number", class="shorttextbox") }}
-    {{ hspace() }}
-    {{ entry('Dinner dreamers today', 'dinner_dreamers', type="number", class="shorttextbox") }}
     {% if not form %}
     {{ hspace() }}
-    {{ entry('Total dreamers', 'dreamers', type="number", class="shorttextbox") }}
+    {{ entry('Dinner dreamers today', 'dinner_dreamers', type="number", class="shorttextbox") }}
     {% endif %}
+    {{ hspace() }}
+    {{ entry('Total dreamers', 'dreamers', type="number", class="shorttextbox") }}
     </div> 
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -164,7 +164,21 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry("Misc notes", "misc_notes", class="longtextbox") }}
+    {% if form %}
+    Misc notes:
+    <br/>
+    <textarea class="longtextbox" id="misc_notes_textarea">{{ report['misc_notes'] }}</textarea>
+    <input type="hidden" name="misc_notes" value="{{ report['misc_notes'] }}" id="misc_notes_input"/>
+    {% else %}
+    <strong>Misc notes</strong>: <span name='misc_notes'>
+    {% for line in report["misc_notes"].split('\n') %}
+     <br/>
+     {{ line }}
+    {% endfor %}</span>
+    {% if preview %}
+    <input type="hidden" name="misc_notes" value="{{ report['misc_notes'] }}" id="misc_notes_input"/>
+    {% endif %}
+    {% endif %}
     </div> 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
@@ -180,7 +194,7 @@
 {% endif %}
 {% if form %}
 <input type="submit" class="btn" value="Preview" formaction="/previewreport" formmethod="get"/>
-<input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
+<input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post" onclick="window.submit_clicked = true;"/>
 {% elif preview %}
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% else %}
@@ -196,14 +210,7 @@
 
 {% if form %}
 <script>
-function clicked() {
-   if (confirm('Are you sure you want to delete this report?')) {
-       $('delete-form').submit();
-   } else {
-       return false;
-   }
-}
-
+window.submit_clicked = false;
 function validateEntry(name, regex) {
     /*
     looks for the input with `name`, and if it doesn't match the right regex,
@@ -217,7 +224,9 @@ function validateEntry(name, regex) {
     }
     var valid = regex.test(input.value);
     if (!valid) {
-        $(input).css({'border-color': 'red'});
+        setTimeout(function(){
+            $(input).css({'border-color': 'red'});
+        }, 500);
         return false;
     } else {
         $(input).css({'border-color': ''});
@@ -225,20 +234,27 @@ function validateEntry(name, regex) {
     }
 }
 
-function validateAllEntries() {
-    var regexes = {
+function fillMiscNotes() {
+    var misc_notes = $("#misc_notes_textarea").val();
+    $("#misc_notes_input").val(misc_notes);
+}
+
+function validateAllEntries(event) {
+    event.preventDefault();
+    fillMiscNotes();
+    /* An incomplete form can be submitted if all of these forms are inputted (bare minimum) */
+    var lunch_regexes = { 
         'date': /^\d\d\d\d-\d\d-\d\d$/,
 
         'lunch_customers_today': /^\d+$/,
         'lunch_dreams': /^\d+$/,
         'lunch_dreamers': /^\d+$/,
-        'dinner_customers_today': /^\d+$/,
-        'dinner_dreams': /^\d+$/,
-        'dinner_dreamers': /^\d+$/,
-
-        'working_members': /^.+$/,
-        'supporting_members': /^.*$/,
-        'visiting_members': /^.*$/,
+    };
+    /* If any of these are there, they all must be there. */ 
+    var regexes = { 
+        'customers_today': /^\d+$/,
+        'dreams': /^\d+$/,
+        'dreamers': /^\d+$/,
 
         'end_time': /^(\d\d:\d\d)|(\d\d\d\d)$/,
         'total_bowls': /^\d+$/,
@@ -246,20 +262,40 @@ function validateAllEntries() {
         'positive_cycle': /^\d+$/,
         'total_cups': /^\d+$/,
         'money_off_by': /^\$?\-?\d+$/,
-
-        'misc_notes': /^.*$/,
-    }
+    };
     var allValid = true;
+    var anyValid = false;
+    for (var name in lunch_regexes) {
+        var regex = lunch_regexes[name];
+        var valid = validateEntry(name, regex);
+        allValid = allValid && valid;
+    }
+    if (!allValid) {
+        $("#errortext").html("Invalid entry. Please enter the correct information in the boxes highlighted in red, and resubmit.");
+        return false;
+    }
+    allValid = true;
     for (var name in regexes) {
         var regex = regexes[name];
         var valid = validateEntry(name, regex);
         allValid = allValid && valid;
+        anyValid = anyValid || valid;
     }
-    if (allValid) {
-        return true;
-    } else {
+    if (anyValid && !allValid) {
         $("#errortext").html("Invalid entry. Please enter the correct information in the boxes highlighted in red, and resubmit.");
         return false;
+    } else {
+        if (window.submit_clicked) {
+            $('form#preview_or_submit_form').attr('action', '/createreport');
+            $('form#preview_or_submit_form').attr('method', 'post');
+            $('form#preview_or_submit_form').unbind('submit').submit();
+            return true;
+        } else {
+            $('form#preview_or_submit_form').attr('action', '/previewreport');
+            $('form#preview_or_submit_form').attr('method', 'get');
+            $('form#preview_or_submit_form').unbind('submit').submit();
+            return true;
+        }
     }
 }
 
@@ -287,7 +323,7 @@ function prefillDate() {
 
 $(document).ready(prefillDate);
 
-// if we return false, the form won't be submitted
+/* if we return false, the form won't be submitted */
 $("form").submit(validateAllEntries);
 </script>
 {% endif %}
