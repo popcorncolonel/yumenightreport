@@ -93,7 +93,7 @@
     </div> 
     {% if 'dreamers' in report and report['dreamers'] and 'customers_today' in report and report['customers_today'] %}
     <div class="textcenter">
-    <strong>Dreamer to Customer rate</strong>: <span name='percent_dreamers'>{{ '%0.2f' | format(100.0 * (report['dreamers']|float) / report['customers_today']) }}%</span>
+    <strong>Dreamer to customer ratio</strong>: <span name='percent_dreamers'>{{ '%0.2f' | format(100.0 * (report['dreamers']|float) / report['customers_today']) }}%</span>
     </div> 
     {% endif %}
 
