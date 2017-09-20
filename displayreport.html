@@ -91,6 +91,11 @@
     <div class="textcenter">
     {{ entry('Dream achievement rate', 'achievement_rate', class="shorttextbox") }}
     </div> 
+    {% if 'dreamers' in report and report['dreamers'] and 'customers_today' in report and report['customers_today'] %}
+    <div class="textcenter">
+    <strong>Dreamer to Customer rate</strong>: <span name='percent_dreamers'>{{ '%0.2f' | format(100.0 * (report['dreamers']|float) / report['customers_today']) }}%</span>
+    </div> 
+    {% endif %}
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
     {% endif %}
@@ -256,7 +261,7 @@ function validateAllEntries(event) {
         'dreams': /^\d+$/,
         'dreamers': /^\d+$/,
 
-        'end_time': /^(\d\d:\d\d)|(\d\d\d\d)$/,
+        'end_time': /^(\d\d:\d\d|\d\d\d\d)$/,
         'total_bowls': /^\d+$/,
         'chopsticks_missing': /^\d+$/,
         'positive_cycle': /^\d+$/,

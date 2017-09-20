@@ -252,10 +252,6 @@ def get_global_stats_vars(
         yearly_dream_goal = current_global_stats.yearly_dream_goal
         dreams_this_year = current_global_stats.dreams_this_year
         customers_this_year = current_global_stats.customers_this_year
-        if dreams is not None:
-            dreams_this_year += dreams
-        if customers_today is not None:
-            customers_this_year += customers_today
         if date_obj is not None:
             daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(date_obj.date()))
         else:
@@ -266,17 +262,16 @@ def get_global_stats_vars(
         yearly_dream_goal = old_report.yearly_dream_goal
         dreams_this_year = old_report.dreams_this_year or current_global_stats.dreams_this_year
         customers_this_year = old_report.customers_this_year or current_global_stats.customers_this_year
-        if dreams is not None:
-            dreams_this_year += dreams
-        if customers_today is not None:
-            customers_this_year += customers_today
-
         if old_report.dreams:
             dreams_this_year -= old_report.dreams
         if old_report.customers_today:
             customers_this_year -= old_report.customers_today
-
         daily_dream_goal = old_report.daily_dream_goal
+
+    if dreams is not None:
+        dreams_this_year += dreams
+    if customers_today is not None:
+        customers_this_year += customers_today
     if overwriting_report is not None and overwriting_report != old_report:
         if overwriting_report.dreams:
             dreams_this_year -= overwriting_report.dreams
