@@ -21,7 +21,7 @@ def get_working_days_left_in_year(date_obj):
     end_year = datetime.date(date_obj.year, month=12, day=31)
     days_until_year_end = (end_year - date_obj).days
     # exclude sundays & mondays
-    working_days_until_year_end = max(0, int((6./7.) * days_until_year_end) - 4)
+    working_days_until_year_end = max(0, int((5./7.) * days_until_year_end) - 4)
     return working_days_until_year_end
 
 
