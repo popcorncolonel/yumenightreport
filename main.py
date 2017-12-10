@@ -13,6 +13,11 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True
 )
 
+def is_past_2017(datetime_obj=None):
+    if datetime_obj is None:
+        datetime_obj = datetime.now()
+    return datetime_obj.year >= 2017
+
 
 def get_working_days_left_in_year(date_obj):
     ''' date_obj must be a `date` object. Returns the number of days left in the year of date_obj '''
@@ -21,14 +26,29 @@ def get_working_days_left_in_year(date_obj):
     # exclude sundays & mondays
     working_days_until_year_end = int((5./7.) * days_until_year_end) 
     return working_days_until_year_end
+    
+
+class Goals(ndb.Model):
+    yearly_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
+    year_goal = ndb.StringProperty(default="")
+    month_goal = ndb.StringProperty(default="")
+
+    def daily_dream_goal(self, working_days_left_in_year=None, datetime_obj=None):
+        dreams_remaining = max(0, self.yearly_dream_goal - self.dreams_this_year)
+        if working_days_left_in_year is None:
+            if datetime_obj is None:
+                datetime_obj = datetime.now()
+            working_days_left_in_year = get_working_days_left_in_year(datetime_obj.date())
+        return dreams_remaining / working_days_left_in_year
 
 
 class GlobalStats(ndb.Model):
+    # TO BE REMOVED IN 2018
     '''
     Global information needed for all reports (like yearly dreamcount)
     '''
     customers_this_year = ndb.IntegerProperty()
-    dreams_this_year = ndb.IntegerProperty()
+    dreams_this_year = ndb.IntegerProperty()  # these numbers are only for 2017.
     yearly_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
     year_goal = ndb.StringProperty(default="")
     month_goal = ndb.StringProperty(default="")
@@ -43,6 +63,7 @@ class GlobalStats(ndb.Model):
 
 
 def initialize_global_stats():
+    # TO BE REMOVED IN 2018
     global_stats = GlobalStats(
         id="global_stats",
         customers_this_year=26108-182,
@@ -55,7 +76,16 @@ def initialize_global_stats():
     return global_stats
 
 
+def get_goals():
+    goals_key = ndb.Key(Goals, "goals")
+    goals = goals_key.get()
+    if goals is None:
+        return Goals()
+    return goals
+
+
 def get_global_stats():
+    # TO BE REMOVED IN 2018
     global_stats_key = ndb.Key(GlobalStats, "global_stats")
     global_stats = global_stats_key.get()
     if global_stats is None:
@@ -67,7 +97,8 @@ class Report(ndb.Model):
     '''
     Information for the daily report
     '''
-    """ Global stats snapshot """
+    """ Global stats snapshot 
+    # TO BE REMOVED IN 2018"""
     customers_this_year = ndb.IntegerProperty()
     dreams_this_year = ndb.IntegerProperty()
     yearly_dream_goal = ndb.IntegerProperty()
@@ -92,6 +123,24 @@ class Report(ndb.Model):
     achievement_rate = ndb.FloatProperty()
 
     misc_notes = ndb.StringProperty()
+    haiku1 = ndb.StringProperty()
+    haiku2 = ndb.StringProperty()
+    haiku3 = ndb.StringProperty()
+    
+    def is_past_2017(self):
+        return is_past_2017(self.date)
+        
+    def get_previous_reports(self):
+        return Report.query(Report.date < self.date, Report.date.year == self.date.year).order(Report.date).fetch()
+        
+    def get_yearly_dreams(self):
+        return sum(report.dreams for report in self.get_previous_reports())
+        
+    def get_yearly_dreamers(self):
+        return sum(report.dreamers for report in self.get_previous_reporters())
+        
+    def get_yearly_customers(self):
+        return sum(report.customers_today for report in self.get_previous_customers())
 
     def update(self, old_report):
         '''
@@ -228,6 +277,7 @@ def get_global_stats_vars(
     but gets the variables from the snapshot in `old_report` otherwise. 
 
     `date_obj` is the date of the report that is being submitted.
+    # TO BE REMOVED IN 2018
     '''
     if old_report is None:
         month_goal = current_global_stats.month_goal
@@ -372,7 +422,8 @@ def create_report_dict_from_report_obj(current_report, preview=False):
         'customers_today': current_report.customers_today if current_report.customers_today is not None else '',
         'dreams': current_report.dreams if current_report.dreams is not None else '',
         'dreamers': current_report.dreamers if current_report.dreamers is not None else '',
-        'achievement_rate': '{:.2f}%'.format(current_report.achievement_rate) if current_report.achievement_rate is not None else '', 
+        'achievement_rate': '{:.2f}%'.format(current_report.achievement_rate) if (
+                current_report.achievement_rate is not None else ''), 
         'working_members': current_report.working_members if current_report.working_members is not None else '',
         'supporting_members': current_report.supporting_members if current_report.supporting_members is not None else '',
         'visiting_members': current_report.visiting_members if current_report.visiting_members is not None else '',
@@ -476,15 +527,15 @@ class EditGoalHandler(webapp2.RequestHandler):
 
 
 def delete_report(date_string, update_global_stats=False):
-    # TODO: get all report objects with a date greater than this one and decrement their yearly snapshots by the amount in this report
     old_report_key = ndb.Key(Report, date_string)
     if update_global_stats:
         old_report = old_report_key.get()
         if old_report:
-            global_stats = get_global_stats()
-            global_stats.customers_this_year -= old_report.customers_today
-            global_stats.dreams_this_year -= old_report.dreams
-            global_stats.put()
+            if !old_report.is_past_2017():
+                global_stats = get_global_stats()
+                global_stats.customers_this_year -= old_report.customers_today
+                global_stats.dreams_this_year -= old_report.dreams
+                global_stats.put()
     old_report_key.delete()
 
 
