@@ -17,10 +17,9 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 )
 
 def is_past_2017(datetime_obj=None):
-    return True
     if datetime_obj is None:
-        datetime_obj = datetime.now()
-    return datetime_obj.year >= 2017
+        datetime_obj = datetime.datetime.now()
+    return datetime_obj.year > 2017
 
 
 def get_working_days_left_in_year(date_obj):
@@ -39,10 +38,9 @@ class Goals(ndb.Model):
     year_goal = ndb.StringProperty(default="")
     month_goal = ndb.StringProperty(default="")
 
-    @classmethod
-    def daily_dream_goal(self, working_days_left_in_year=None, datetime_obj=None):
+    def daily_dream_goal(working_days_left_in_year=None, datetime_obj=None):
         if datetime_obj is None:
-            datetime_obj = datetime.now()
+            datetime_obj = datetime.datetime.now()
         if working_days_left_in_year is None:
             working_days_left_in_year = get_working_days_left_in_year(datetime_obj.date())
         if working_days_left_in_year == 0:
@@ -175,7 +173,7 @@ def get_date_obj(date):
 
 
 def get_old_report(date):
-    if date != '':
+    if date is not None and date != '':
         old_report_key = ndb.Key(Report, date)
         old_report = old_report_key.get()
     else:
@@ -183,229 +181,149 @@ def get_old_report(date):
     return old_report
 
 
-def get_global_stats_vars(
+def _deprecated_populate_global_stats_snapshot(
     current_global_stats,
     old_report, # The report from the previous date
     overwriting_report, # The report we're overwriting
-    date_obj,
-    dreams,
-    customers_today,
+    new_report,
 ):
     '''
     Gets the current global stats variables from global_stats if `old_report` is None,
     but gets the variables from the snapshot in `old_report` otherwise.
+    Modifies the global snaps snapshot in `new_report` if values would be updated.
+    
+    this function sucks
 
-    `date_obj` is the date of the report that is being submitted.
     # TO BE REMOVED IN 2018
     '''
     if old_report is None:
-        month_goal = current_global_stats.month_goal
-        year_goal = current_global_stats.year_goal
-        yearly_dream_goal = current_global_stats.yearly_dream_goal
-        dreams_this_year = current_global_stats.dreams_this_year
-        customers_this_year = current_global_stats.customers_this_year
-        if date_obj is not None:
-            daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(date_obj.date()))
+        new_report.month_goal = current_global_stats.month_goal
+        new_report.year_goal = current_global_stats.year_goal
+        new_report.yearly_dream_goal = current_global_stats.yearly_dream_goal
+        new_report.dreams_this_year = current_global_stats.dreams_this_year
+        new_report.customers_this_year = current_global_stats.customers_this_year
+        if new_report.date is not None:
+            new_report.daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(new_report.date.date()))
         else:
-            daily_dream_goal = current_global_stats.daily_dream_goal()
+            new_report.daily_dream_goal = current_global_stats.daily_dream_goal()
     else:
-        month_goal = old_report.month_goal
-        year_goal = old_report.year_goal
-        yearly_dream_goal = old_report.yearly_dream_goal
-        dreams_this_year = old_report.dreams_this_year or current_global_stats.dreams_this_year
-        customers_this_year = old_report.customers_this_year or current_global_stats.customers_this_year
+        new_report.month_goal = old_report.month_goal
+        new_report.year_goal = old_report.year_goal
+        new_report.yearly_dream_goal = old_report.yearly_dream_goal
+        new_report.dreams_this_year = old_report.dreams_this_year or current_global_stats.dreams_this_year
+        new_report.customers_this_year = old_report.customers_this_year or current_global_stats.customers_this_year
         if old_report.dreams:
-            dreams_this_year -= old_report.dreams
+            new_report.dreams_this_year -= old_report.dreams
         if old_report.customers_today:
-            customers_this_year -= old_report.customers_today
-        daily_dream_goal = old_report.daily_dream_goal
+            new_report.customers_this_year -= old_report.customers_today
+        new_report.daily_dream_goal = old_report.daily_dream_goal
 
-    if dreams is not None:
-        dreams_this_year += dreams
-    if customers_today is not None:
-        customers_this_year += customers_today
+    print("DBG: dreams_this_year: {}".format(new_report.dreams_this_year))
+    print("DBG: customers_this_year: {}".format(new_report.customers_this_year))
+    if new_report.get_dreams() is not None:
+        new_report.dreams_this_year += new_report.get_dreams()
+    if new_report.get_customers_today() is not None:
+        new_report.customers_this_year += new_report.get_customers_today()
     if overwriting_report is not None and overwriting_report != old_report:
-        if overwriting_report.dreams:
-            dreams_this_year -= overwriting_report.dreams
-        if overwriting_report.customers_today:
-            customers_this_year -= overwriting_report.customers_today
-    return month_goal, year_goal, yearly_dream_goal, dreams_this_year, customers_this_year, daily_dream_goal
+        if overwriting_report.get_dreams():
+            new_report.dreams_this_year -= overwriting_report.get_dreams()
+        if overwriting_report.get_customers_today():
+            new_report.customers_this_year -= overwriting_report.get_customers_today()
 
 
-def get_achievement_rate(dreams, daily_dream_goal):
-    if dreams is None:
-        achievement_rate = None
+def _deprecated_populate_achievement_rate(report):
+    if report.dreams is None:
+        report.achievement_rate = None
     else:
-        if daily_dream_goal == 0:
-            return 100.
-        achievement_rate = (dreams / float(daily_dream_goal)) * 100
-    return achievement_rate
+        if report.get_daily_dream_goal() == 0:
+            report.achievement_rate = 100.
+        report.achievement_rate = (report.dreams / float(report.get_daily_dream_goal())) * 100
 
 
-def get_dinner_totals(
-    lunch_customers_today,
-    customers_today,
-    lunch_dreams,
-    dreams,
-    lunch_dreamers,
-    dreamers,
-    ):
-    if lunch_customers_today is not None and customers_today is not None:
-        dinner_customers_today = customers_today - lunch_customers_today
-    else:
-        dinner_customers_today = None
-    if lunch_dreams is not None and dreams is not None:
-        dinner_dreams = dreams - lunch_dreams
-    else:
-        dinner_dreams = None
-    if lunch_dreamers is not None and dreamers is not None:
-        dinner_dreamers = dreamers - lunch_dreamers
-    else:
-        dinner_dreamers = None
-    return dinner_customers_today, dinner_dreams, dinner_dreamers
+def _deprecated_update_global_stats_with_report_info(report, old_report, overwriting_report, current_global_stats):
+    if not report.is_past_2017() and report.customers_today and report.dreams and report.dreamers:
+        if old_report is not None:
+            if old_report.customers_today:
+                current_global_stats.customers_this_year -= old_report.get_customers_today()
+            if old_report.dreams:
+                current_global_stats.dreams_this_year -= old_report.get_dreams()
+        if overwriting_report is not None:
+            if old_report is None or old_report.date_string != overwriting_report.date_string:
+                if overwriting_report.customers_today:
+                    current_global_stats.customers_this_year -= overwriting_report.get_customers_today()
+                if overwriting_report.dreams:
+                    current_global_stats.dreams_this_year -= overwriting_report.get_dreams()
+        current_global_stats.customers_this_year += report.get_customers_today()
+        current_global_stats.dreams_this_year += report.get_dreams()
+        current_global_stats.put()
+
+
+def _populate_dinner_totals(report):
+    if report.lunch_customers_today is not None and report.customers_today is not None:
+        report.dinner_customers_today = report.customers_today - report.lunch_customers_today
+    if report.lunch_dreams is not None and report.dreams is not None:
+        report.dinner_dreams = report.dreams - report.lunch_dreams
+    if report.lunch_dreamers is not None and report.dreamers is not None:
+        report.dinner_dreamers = report.dreamers - report.lunch_dreamers
 
 
 def get_report_from_request2018(request, prev_date=None):
     # TODO: Collect minimal information from the request. The rest can be inferred by functions
     pass
 
-def get_report_from_request(request, update_global_stats, prev_date=None):
-    '''
-    Naming convention:
-    * when reporting numbers/count of things don't do num_* or count_* just say the thing
-    *    if something's in the report, use that name i.e. "total bowls" -> "total_bowls"
-    * always spell out the full word i.e. "customers" over "cust"
-    * separate all words with underscores
-    * variable name and key name need to be the same
-    '''
-    date = request.get('date', '')
+def _populate_report_fields_from_request(report, request):
+    # Parse and populate date/time fields
+    date_string = request.get('date', '')
+    end_time = request.get('end_time', '')
+    report.date = get_date_obj(date_string)
+    report.end_time = get_time_obj(end_time)
+
+    report.id = date_string
 
     # They want to input lunch and total. So we compute dinner manually.
-    lunch_customers_today = get_integer_input(request, 'lunch_customers_today')
-    customers_today = get_integer_input(request, 'customers_today')
-    lunch_dreams = get_integer_input(request, 'lunch_dreams')
-    dreams = get_integer_input(request, 'dreams')
-    lunch_dreamers = get_integer_input(request, 'lunch_dreamers')
-    dreamers = get_integer_input(request, 'dreamers')
+    report.lunch_customers_today = get_integer_input(request, 'lunch_customers_today')
+    report.customers_today = get_integer_input(request, 'customers_today')
+    report.lunch_dreams = get_integer_input(request, 'lunch_dreams')
+    report.dreams = get_integer_input(request, 'dreams')
+    report.lunch_dreamers = get_integer_input(request, 'lunch_dreamers')
+    report.dreamers = get_integer_input(request, 'dreamers')
 
-    working_members = request.get('working_members', '')
-    supporting_members = request.get('supporting_members', '')
-    visiting_members = request.get('visiting_members', '')
+    report.working_members = request.get('working_members', '')
+    report.supporting_members = request.get('supporting_members', '')
+    report.visiting_members = request.get('visiting_members', '')
 
-    end_time = request.get('end_time', '')
-    total_bowls = get_integer_input(request, 'total_bowls')
-    total_cups = get_integer_input(request, 'total_cups')
-    chopsticks_missing = get_integer_input(request,'chopsticks_missing')
-    money_off_by = get_integer_input(request, 'money_off_by')
-    positive_cycle = get_integer_input(request, 'positive_cycle')
+    report.total_bowls = get_integer_input(request, 'total_bowls')
+    report.total_cups = get_integer_input(request, 'total_cups')
+    report.chopsticks_missing = get_integer_input(request,'chopsticks_missing')
+    report.money_off_by = get_integer_input(request, 'money_off_by')
+    report.positive_cycle = get_integer_input(request, 'positive_cycle')
+    report.misc_notes = request.get('misc_notes', '')
 
-    dinner_customers_today, dinner_dreams, dinner_dreamers = get_dinner_totals(
-        lunch_customers_today,
-        customers_today,
-        lunch_dreams,
-        dreams,
-        lunch_dreamers,
-        dreamers,
-    )
-    misc_notes = request.get('misc_notes', '')
-    haiku1 = request.get('haiku1', '')
-    haiku2 = request.get('haiku2', '')
-    haiku3 = request.get('haiku3', '')
+def get_report_from_request(request, update_global_stats, prev_date=None):
+    report = Report()
+    _populate_report_fields_from_request(report, request)
+    _populate_dinner_totals(report)
 
-    end_time_obj = get_time_obj(end_time)
-    date_obj = get_date_obj(date)
-
-    if not is_past_2017():
-        overwriting_report = get_old_report(date)  # overwriting_report is the report we're overwriting by saving this report
+    # Snapshot the goals. Maybe this should eventually be removed but it's pretty easy logic since the goals are fairly static.
+    if report.is_past_2017():
+        current_goals = get_goals()
+        report.month_goal = current_goals.month_goal
+        report.year_goal = current_goals.year_goal
+        report.yearly_dream_goal = current_goals.yearly_dream_goal
+    else:
+        # overwriting_report is the report we're overwriting by saving this report
+        overwriting_report = get_old_report(report.date_string)
+        # old_report is the report we're modifying, if editing for a date that currently has a report for it
         if prev_date:
-            old_report = get_old_report(prev_date) # old_report is the report we're modifying
+            old_report = get_old_report(prev_date)
         else:
             old_report = None
         current_global_stats = get_global_stats()
-        (month_goal,
-         year_goal,
-         yearly_dream_goal,
-         dreams_this_year,
-         customers_this_year,
-         daily_dream_goal) = get_global_stats_vars(
-            current_global_stats,
-            old_report,
-            overwriting_report,
-            date_obj,
-            dreams,
-            customers_today,
-        )
-    else:
-        current_goals = get_goals()
-        month_goal = current_goals.month_goal
-        year_goal = current_goals.year_goal
-        yearly_dream_goal = current_goals.yearly_dream_goal
-    achievement_rate = get_achievement_rate(dreams, daily_dream_goal)
-
-    if not is_past_2017() and update_global_stats and customers_today and dreams and dreamers:
-        if old_report is not None:
-            if old_report.customers_today:
-                current_global_stats.customers_this_year -= old_report.customers_today
-            if old_report.dreams:
-                current_global_stats.dreams_this_year -= old_report.dreams
-        if overwriting_report is not None:
-            if old_report is None or old_report.date_string != overwriting_report.date_string:
-                if overwriting_report.customers_today:
-                    current_global_stats.customers_this_year -= overwriting_report.customers_today
-                if overwriting_report.dreams:
-                    current_global_stats.dreams_this_year -= overwriting_report.dreams
-        current_global_stats.customers_this_year += customers_today
-        current_global_stats.dreams_this_year += dreams
-        current_global_stats.put()
-
-    if is_past_2017():
-        deprecated_fields = dict(
-            dreams_this_year=dreams_this_year,
-            customers_this_year=customers_this_year,
-            daily_dream_goal=daily_dream_goal,
-        )
-    else:
-        deprecated_fields = dict()
-    return Report(
-        id=date,
-        date=date_obj,
-        lunch_customers_today=lunch_customers_today,
-        dinner_customers_today=dinner_customers_today,
-        lunch_dreams=lunch_dreams,
-        dinner_dreams=dinner_dreams,
-        lunch_dreamers=lunch_dreamers,
-        dinner_dreamers=dinner_dreamers,
-
-        customers_today=customers_today,
-        dreams=dreams,
-        dreamers=dreamers,
-
-        working_members=working_members,
-        supporting_members=supporting_members,
-        visiting_members=visiting_members,
-
-        end_time=end_time_obj,
-        total_bowls=total_bowls,
-        total_cups=total_cups,
-        chopsticks_missing=chopsticks_missing,
-        money_off_by=money_off_by,
-        positive_cycle=positive_cycle,
-        achievement_rate=achievement_rate,
-        # global_stats snapshot:
-        month_goal=month_goal,
-        year_goal=year_goal,
-        yearly_dream_goal=yearly_dream_goal,
-
-        # to be deprecated:
-        misc_notes=misc_notes,
-
-        haiku1=haiku1,
-        haiku2=haiku2,
-        haiku3=haiku3,
-
-        **deprecated_fields
-    )
-
+        _deprecated_populate_global_stats_snapshot(current_global_stats, old_report, overwriting_report, report)
+        _deprecated_populate_achievement_rate(report)
+        if update_global_stats:
+            _deprecated_update_global_stats_with_report_info(report, old_report, overwriting_report, current_global_stats)
+    return report
 
 def create_report_dict_from_report_obj(current_report, preview=False):
     report_dict = {
@@ -433,31 +351,18 @@ def create_report_dict_from_report_obj(current_report, preview=False):
         'total_cups': current_report.total_cups if current_report.total_cups is not None else '',
         'chopsticks_missing': current_report.chopsticks_missing if current_report.chopsticks_missing is not None else '',
         'money_off_by': current_report.money_off_by if current_report.money_off_by is not None else '',
+        'misc_notes': current_report.misc_notes if current_report.misc_notes is not None else '',
+        'customers_today': current_report.get_customers_today() or '',
+        'dreams': current_report.get_dreams() or '',
+        'dreamers': current_report.get_dreamers() or '',
+        'daily_dream_goal': current_report.get_daily_dream_goal() or '',
+        'yearly_dream_goal': current_report.yearly_dream_goal or '',
+        'customers_this_year': current_report.get_customers_this_year() or '',
+        'dreams_this_year': current_report.get_dreams_this_year() or '',
+        'dreamers_this_year': current_report.get_dreamers_this_year() or '',
+        'achievement_rate': '{:.2f}%'.format(current_report.get_achievement_rate()) if \
+                current_report.get_achievement_rate() is not None else '',
     }
-    if current_report.is_past_2017():
-        report_dict['haiku1'] = current_report.haiku1 if current_report.haiku1 is not None else '',
-        report_dict['haiku2'] = current_report.haiku2 if current_report.haiku2 is not None else '',
-        report_dict['haiku3'] = current_report.haiku3 if current_report.haiku3 is not None else '',
-
-        report_dict['customers_today'] = current_report.get_customers_today(),
-        report_dict['dreams'] = current_report.get_dreams(),
-        report_dict['dreamers'] = current_report.get_dreamers(),
-        report_dict['daily_dream_goal'] = goals.daily_dream_goal(current_report.date)),
-        report_dict['yearly_dream_goal'] = current_report.get_yearly_dream_goal(),
-        report_dict['customers_this_year'] = current_report.get_customers_this_year(),
-        report_dict['dreams_this_year'] = current_report.get_dreams_this_year(),
-        report_dict['dreamers_this_year'] = current_report.get_dreamers_this_year(),
-    else:
-        report_dict['misc_notes'] = current_report.misc_notes if current_report.misc_notes is not None else '',
-        report_dict['achievement_rate'] = '{:.2f}%'.format(current_report.achievement_rate) if \
-                current_report.achievement_rate is not None else '',
-        report_dict['customers_today'] = current_report.customers_today if current_report.customers_today is not None else '',
-        report_dict['dreams'] = current_report.dreams if current_report.dreams is not None else '',
-        report_dict['dreamers'] = current_report.dreamers if current_report.dreamers is not None else '',
-        report_dict['daily_dream_goal'] = current_report.daily_dream_goal if current_report.daily_dream_goal is not None else '',
-        report_dict['yearly_dream_goal'] = current_report.yearly_dream_goal if current_report.yearly_dream_goal is not None else '',
-        report_dict['customers_this_year'] = current_report.customers_this_year if current_report.customers_this_year is not None else '',
-        report_dict['dreams_this_year'] = current_report.dreams_this_year if current_report.dreams_this_year is not None else '',
     return report_dict
 
 
@@ -535,14 +440,14 @@ class EditGoalHandler(webapp2.RequestHandler):
     '''
     def get(self):
         template_values = {}
-        #initialize_global_stats()
+        initialize_global_stats()
         template_values['goals'] = get_goals()
         template_values['global_stats'] = get_global_stats()
         template = JINJA_ENVIRONMENT.get_template('editgoals.html')
         self.response.write(template.render(template_values))
 
     def post(self):
-        if is_past_2018():
+        if is_past_2017():
             goals_obj = get_goals()
         else:
             goals_obj = get_global_stats()
