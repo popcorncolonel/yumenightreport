@@ -16,6 +16,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True,
 )
 
+
 def is_past_2017(datetime_obj=None):
     if datetime_obj is None:
         datetime_obj = datetime.datetime.now()
@@ -27,7 +28,7 @@ def get_working_days_left_in_year(date_obj):
     end_year = datetime.date(date_obj.year, month=12, day=31)
     days_until_year_end = (end_year - date_obj).days
     # exclude sundays & mondays
-    working_days_until_year_end = max(0, int((5./7.) * days_until_year_end) - 2)
+    working_days_until_year_end = max(1, int((5./7.) * days_until_year_end))
     return working_days_until_year_end
 
 
@@ -38,7 +39,7 @@ class Goals(ndb.Model):
     year_goal = ndb.StringProperty(default="")
     month_goal = ndb.StringProperty(default="")
 
-    def daily_dream_goal(working_days_left_in_year=None, datetime_obj=None):
+    def daily_dream_goal(self, working_days_left_in_year=None, datetime_obj=None):
         if datetime_obj is None:
             datetime_obj = datetime.datetime.now()
         if working_days_left_in_year is None:
@@ -48,12 +49,25 @@ class Goals(ndb.Model):
         dreams_remaining = max(0, self.yearly_dream_goal - Report.get_dreams_for_year(datetime_obj))
         return dreams_remaining / working_days_left_in_year
 
+    @property
+    def customers_this_year(self):
+        return Report.get_customers_for_year(datetime.datetime.now().date())
+
+    @property
+    def dreams_this_year(self):
+        return Report.get_dreams_for_year(datetime.datetime.now().date())
+
+    @property
+    def dreamers_this_year(self):
+        return Report.get_dreamers_for_year(datetime.datetime.now().date())
+
 
 class GlobalStats(ndb.Model):
     # TO BE REMOVED IN 2018
     '''
     Global information needed for all reports (like yearly dreamcount)
     '''
+    dreamers_this_year = ndb.IntegerProperty(default=0)
     customers_this_year = ndb.IntegerProperty()
     dreams_this_year = ndb.IntegerProperty()  # these numbers are only for 2017.
     yearly_dream_goal = ndb.IntegerProperty()  # how many dreams would we like today?
@@ -71,20 +85,6 @@ class GlobalStats(ndb.Model):
         return dreams_remaining / working_days_left_in_year
 
 
-def initialize_global_stats():
-    # TO BE REMOVED IN 2018
-    global_stats = GlobalStats(
-        id="global_stats",
-        customers_this_year=1000,#-182,
-        dreams_this_year=1000,#-135,
-        yearly_dream_goal=100000,
-        year_goal="Say less",
-        month_goal="",
-    )
-    global_stats.put()
-    return global_stats
-
-
 def get_goals():
     goals_key = ndb.Key(Goals, "goals")
     goals = goals_key.get()
@@ -94,11 +94,24 @@ def get_goals():
 
 
 def get_global_stats():
-    # TO BE REMOVED IN 2018
+    if is_past_2017():
+        return get_goals()
     global_stats_key = ndb.Key(GlobalStats, "global_stats")
     global_stats = global_stats_key.get()
     if global_stats is None:
-        return GlobalStats()
+        return GlobalStats(id="global_stats")
+    return global_stats
+
+
+def initialize_global_stats():
+    global_stats = get_global_stats()
+    global_stats.year_goal = "Say less"
+    global_stats.month_goal = ""
+    global_stats.yearly_dream_goal = 100000
+    if not is_past_2017():
+        global_stats.customers_this_year = 1000 #-182
+        global_stats.dreams_this_year = 1000 #-135
+    global_stats.put()
     return global_stats
 
 
@@ -173,22 +186,21 @@ def get_date_obj(date):
 
 
 def get_old_report(date):
+    old_report = None
     if date is not None and date != '':
         old_report_key = ndb.Key(Report, date)
         old_report = old_report_key.get()
-    else:
-        old_report = None
     return old_report
 
 
 def _deprecated_populate_global_stats_snapshot(
-    current_global_stats,
+    current_global_stats2017,
     old_report, # The report from the previous date
     overwriting_report, # The report we're overwriting
     new_report,
 ):
     '''
-    Gets the current global stats variables from global_stats if `old_report` is None,
+    Gets the current global stats variables from global_stats2017 if `old_report` is None,
     but gets the variables from the snapshot in `old_report` otherwise.
     Modifies the global snaps snapshot in `new_report` if values would be updated.
     
@@ -197,29 +209,27 @@ def _deprecated_populate_global_stats_snapshot(
     # TO BE REMOVED IN 2018
     '''
     if old_report is None:
-        new_report.month_goal = current_global_stats.month_goal
-        new_report.year_goal = current_global_stats.year_goal
-        new_report.yearly_dream_goal = current_global_stats.yearly_dream_goal
-        new_report.dreams_this_year = current_global_stats.dreams_this_year
-        new_report.customers_this_year = current_global_stats.customers_this_year
+        new_report.month_goal = current_global_stats2017.month_goal
+        new_report.year_goal = current_global_stats2017.year_goal
+        new_report.yearly_dream_goal = current_global_stats2017.yearly_dream_goal
+        new_report.dreams_this_year = current_global_stats2017.dreams_this_year
+        new_report.customers_this_year = current_global_stats2017.customers_this_year
         if new_report.date is not None:
-            new_report.daily_dream_goal = current_global_stats.daily_dream_goal(get_working_days_left_in_year(new_report.date.date()))
+            new_report.daily_dream_goal = current_global_stats2017.daily_dream_goal(get_working_days_left_in_year(new_report.date.date()))
         else:
-            new_report.daily_dream_goal = current_global_stats.daily_dream_goal()
+            new_report.daily_dream_goal = current_global_stats2017.daily_dream_goal()
     else:
         new_report.month_goal = old_report.month_goal
         new_report.year_goal = old_report.year_goal
         new_report.yearly_dream_goal = old_report.yearly_dream_goal
-        new_report.dreams_this_year = old_report.dreams_this_year or current_global_stats.dreams_this_year
-        new_report.customers_this_year = old_report.customers_this_year or current_global_stats.customers_this_year
+        new_report.dreams_this_year = old_report.dreams_this_year or current_global_stats2017.dreams_this_year
+        new_report.customers_this_year = old_report.customers_this_year or current_global_stats2017.customers_this_year
         if old_report.dreams:
             new_report.dreams_this_year -= old_report.dreams
         if old_report.customers_today:
             new_report.customers_this_year -= old_report.customers_today
         new_report.daily_dream_goal = old_report.daily_dream_goal
 
-    print("DBG: dreams_this_year: {}".format(new_report.dreams_this_year))
-    print("DBG: customers_this_year: {}".format(new_report.customers_this_year))
     if new_report.get_dreams() is not None:
         new_report.dreams_this_year += new_report.get_dreams()
     if new_report.get_customers_today() is not None:
@@ -237,11 +247,12 @@ def _deprecated_populate_achievement_rate(report):
     else:
         if report.get_daily_dream_goal() == 0:
             report.achievement_rate = 100.
-        report.achievement_rate = (report.dreams / float(report.get_daily_dream_goal())) * 100
+        else:
+        	report.achievement_rate = (report.dreams / float(report.get_daily_dream_goal())) * 100
 
 
 def _deprecated_update_global_stats_with_report_info(report, old_report, overwriting_report, current_global_stats):
-    if not report.is_past_2017() and report.customers_today and report.dreams and report.dreamers:
+    if not report.is_past_2017() and report.is_finalized():
         if old_report is not None:
             if old_report.customers_today:
                 current_global_stats.customers_this_year -= old_report.get_customers_today()
@@ -255,6 +266,8 @@ def _deprecated_update_global_stats_with_report_info(report, old_report, overwri
                     current_global_stats.dreams_this_year -= overwriting_report.get_dreams()
         current_global_stats.customers_this_year += report.get_customers_today()
         current_global_stats.dreams_this_year += report.get_dreams()
+        print("DBG: updating global stats -- report dreams == {}".format(report.get_dreams()))
+        print("DBG: updating global stats -- dreams == {}".format(current_global_stats.dreams_this_year))
         current_global_stats.put()
 
 
@@ -267,18 +280,12 @@ def _populate_dinner_totals(report):
         report.dinner_dreamers = report.dreamers - report.lunch_dreamers
 
 
-def get_report_from_request2018(request, prev_date=None):
-    # TODO: Collect minimal information from the request. The rest can be inferred by functions
-    pass
-
 def _populate_report_fields_from_request(report, request):
     # Parse and populate date/time fields
     date_string = request.get('date', '')
     end_time = request.get('end_time', '')
     report.date = get_date_obj(date_string)
     report.end_time = get_time_obj(end_time)
-
-    report.id = date_string
 
     # They want to input lunch and total. So we compute dinner manually.
     report.lunch_customers_today = get_integer_input(request, 'lunch_customers_today')
@@ -300,13 +307,13 @@ def _populate_report_fields_from_request(report, request):
     report.misc_notes = request.get('misc_notes', '')
 
 def get_report_from_request(request, update_global_stats, prev_date=None):
-    report = Report()
+    report = Report(id=request.get('date', ''))
     _populate_report_fields_from_request(report, request)
     _populate_dinner_totals(report)
 
     # Snapshot the goals. Maybe this should eventually be removed but it's pretty easy logic since the goals are fairly static.
     if report.is_past_2017():
-        current_goals = get_goals()
+        current_goals = get_global_stats()
         report.month_goal = current_goals.month_goal
         report.year_goal = current_goals.year_goal
         report.yearly_dream_goal = current_goals.yearly_dream_goal
@@ -357,11 +364,12 @@ def create_report_dict_from_report_obj(current_report, preview=False):
         'dreamers': current_report.get_dreamers() or '',
         'daily_dream_goal': current_report.get_daily_dream_goal() or '',
         'yearly_dream_goal': current_report.yearly_dream_goal or '',
-        'customers_this_year': current_report.get_customers_this_year() or '',
-        'dreams_this_year': current_report.get_dreams_this_year() or '',
+        'customers_this_year': current_report.get_customers_this_year() if current_report.get_customers_this_year() is not None else '',
+        'dreams_this_year': current_report.get_dreams_this_year() if current_report.get_dreams_this_year() is not None else '',
         'dreamers_this_year': current_report.get_dreamers_this_year() or '',
         'achievement_rate': '{:.2f}%'.format(current_report.get_achievement_rate()) if \
                 current_report.get_achievement_rate() is not None else '',
+        'is_past_2017': current_report.is_past_2017() or '',
     }
     return report_dict
 
@@ -402,10 +410,11 @@ class CreateReportHandler(webapp2.RequestHandler):
         # create a new Report object and save it to ndb
         old_date_string = self.request.get('old_date_string', None)
         new_report = get_report_from_request(self.request, update_global_stats=True, prev_date=old_date_string)
+        print('DBG: posting new report: {}'.format(new_report))
         new_report.put()
-        if old_date_string:
-            if old_date_string != new_report.date_string:
-                delete_report(old_date_string)
+        #if old_date_string != "" and old_date_string is not None:
+        #    if old_date_string != new_report.date_string:
+        #        delete_report(old_date_string)
         report_page = '/report/' + new_report.date.strftime('%Y-%m-%d')
         self.redirect(report_page)
 
@@ -423,7 +432,6 @@ class PreviewReportHandler(webapp2.RequestHandler):
         current_report = get_report_from_request(self.request, update_global_stats=False, prev_date=old_date_string)
         report_dict = create_report_dict_from_report_obj(current_report, preview=True)
         template_values['global_stats'] = get_global_stats()
-        template_values['goals'] = get_goals()
         template_values['report'] = report_dict
         template_values['preview'] = True
         template_values['hidetitleimg'] = True
@@ -440,17 +448,13 @@ class EditGoalHandler(webapp2.RequestHandler):
     '''
     def get(self):
         template_values = {}
-        initialize_global_stats()
-        template_values['goals'] = get_goals()
+        #initialize_global_stats()
         template_values['global_stats'] = get_global_stats()
         template = JINJA_ENVIRONMENT.get_template('editgoals.html')
         self.response.write(template.render(template_values))
 
     def post(self):
-        if is_past_2017():
-            goals_obj = get_goals()
-        else:
-            goals_obj = get_global_stats()
+        goals_obj = get_global_stats()
         yearly_dream_goal = get_integer_input(self.request, 'yearly_dream_goal', goals_obj.yearly_dream_goal)
         month_goal = self.request.get('month_goal', goals_obj.month_goal)
         year_goal = self.request.get('year_goal', goals_obj.year_goal)
@@ -461,22 +465,11 @@ class EditGoalHandler(webapp2.RequestHandler):
         self.redirect('/')
 
 
-def delete_report(date_string, update_global_stats=False):
-    old_report_key = ndb.Key(Report, date_string)
-    if update_global_stats:
-        old_report = old_report_key.get()
-        if old_report:
-            if not old_report.is_past_2017():
-                global_stats = get_global_stats()
-                global_stats.customers_this_year -= old_report.customers_today
-                global_stats.dreams_this_year -= old_report.dreams
-                global_stats.put()
-    old_report_key.delete()
-
-
 class DeleteReportHandler(webapp2.RequestHandler):
     def post(self, date_string):
-        delete_report(date_string, update_global_stats=True)
+        old_report_key = ndb.Key(Report, date_string)
+        if old_report_key.get() is not None:
+            old_report_key.delete()
         self.redirect('/')
 
 
@@ -489,12 +482,11 @@ class MainHandler(webapp2.RequestHandler):
         # list of most recent reports
         # total number of dreams
         # average number of dreams per diem
-        template_values['goals'] = get_goals()
         template_values['global_stats'] = get_global_stats()
         recent_reports = [x for x in Report.query().fetch(limit=100)]
         sorted_reports = sorted(recent_reports, key=lambda x: x.date, reverse=True)
         # ignore incomplete reports
-        sorted_reports = [report for report in sorted_reports if report.dreams and report.customers_today and report.dreamers]
+        sorted_reports = [report for report in sorted_reports if report.is_finalized()]
         template_values['reports'] = sorted_reports
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))

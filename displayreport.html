@@ -203,11 +203,11 @@
 {% elif preview %}
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% else %}
-{#  TODO: make deleting robust? There are a lot of issues, like updating the number of dreams
+{% if report['is_past_2017'] %}
 <form id="delete-form" action="/deletereport/{{ report['date_string'] }}" method="post" style="display: inline;">
 <button onclick="delete_button_click()" class="btn">Delete</button>
 </form>
-#}
+{% endif %}
 {% endif %}
 
 </div> 
