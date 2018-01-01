@@ -332,7 +332,7 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
             _deprecated_update_global_stats_with_report_info(report, old_report, overwriting_report, current_global_stats)
     return report
 
-def create_report_dict_from_report_obj(current_report, preview=False):
+def create_report_dict_from_report_obj(current_report):
     report_dict = {
         'month_goal': current_report.month_goal if current_report.month_goal is not None else '',
         'year_goal': current_report.year_goal if current_report.year_goal is not None else '',
@@ -430,7 +430,7 @@ class PreviewReportHandler(webapp2.RequestHandler):
         # create Report object based on self.request (using the same logic as ViewReportHandler)
         old_date_string = self.request.get('old_date_string', None)
         current_report = get_report_from_request(self.request, update_global_stats=False, prev_date=old_date_string)
-        report_dict = create_report_dict_from_report_obj(current_report, preview=True)
+        report_dict = create_report_dict_from_report_obj(current_report)
         template_values['global_stats'] = get_global_stats()
         template_values['report'] = report_dict
         template_values['preview'] = True

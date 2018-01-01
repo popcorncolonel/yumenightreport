@@ -55,11 +55,15 @@ class Report(ndb.Model):
         return is_past_2017(self.date)
 
     def get_previous_reports(self):
+        ''' Get all reports with dates less than the date of this report (in the same year), as well as this report '''
         if self.date is None:
             date = (datetime.datetime.now() - datetime.timedelta(hours=12)).date()
         else:
             date = self.date.date()
-        return [report for report in Report.get_reports_for_year(date) if report.date.date() <= date]
+        older_reports = [report for report in Report.get_reports_for_year(date) if report.date.date() < date]
+        older_reports.append(self)
+        previous_reports = older_reports
+        return previous_reports
 
     def get_dreams_this_year(self):
         if self.is_past_2017():
