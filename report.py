@@ -61,7 +61,8 @@ class Report(ndb.Model):
         else:
             date = self.date.date()
         older_reports = [report for report in Report.get_reports_for_year(date) if report.date.date() < date]
-        older_reports.append(self)
+        if self.is_finalized():
+            older_reports.append(self)
         previous_reports = older_reports
         return previous_reports
 
