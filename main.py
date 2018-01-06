@@ -483,7 +483,7 @@ class MainHandler(webapp2.RequestHandler):
         # total number of dreams
         # average number of dreams per diem
         template_values['global_stats'] = get_global_stats()
-        recent_reports = [x for x in Report.query().fetch(limit=100)]
+        recent_reports = [x for x in Report.query().order(-Report.date).fetch(limit=20)]
         sorted_reports = sorted(recent_reports, key=lambda x: x.date, reverse=True)
         # ignore incomplete reports
         sorted_reports = [report for report in sorted_reports if report.is_finalized()]
