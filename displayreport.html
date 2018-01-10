@@ -335,5 +335,14 @@ $("form").submit(validateAllEntries);
 
 {% if form %}
 </form>
+{% else %}
+<script>
+$('#delete-form').submit(function() {
+    var c = confirm("Are you sure you want to delete this report? Press OK to delete, Cancel to keep the report.");
+    return c;
+});
+</script>
+
 {% endif %}
+
 
