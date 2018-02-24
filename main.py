@@ -333,6 +333,7 @@ def get_report_from_request(request, update_global_stats, prev_date=None):
     return report
 
 def create_report_dict_from_report_obj(current_report):
+    # TODO: optimize -- if you call "get_...()" twice it's twice the database calls!
     report_dict = {
         'month_goal': current_report.month_goal if current_report.month_goal is not None else '',
         'year_goal': current_report.year_goal if current_report.year_goal is not None else '',
@@ -367,6 +368,7 @@ def create_report_dict_from_report_obj(current_report):
         'customers_this_year': current_report.get_customers_this_year() if current_report.get_customers_this_year() is not None else '',
         'dreams_this_year': current_report.get_dreams_this_year() if current_report.get_dreams_this_year() is not None else '',
         'dreamers_this_year': current_report.get_dreamers_this_year() or '',
+        'perfect_money_marathon': current_report.get_perfect_money_marathon()  if current_report.get_perfect_money_marathon() is not None else  '',
         'achievement_rate': '{:.2f}%'.format(current_report.get_achievement_rate()) if \
                 current_report.get_achievement_rate() is not None else '',
         'is_past_2017': current_report.is_past_2017() or '',

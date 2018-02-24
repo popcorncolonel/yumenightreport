@@ -66,6 +66,16 @@ class Report(ndb.Model):
         previous_reports = older_reports
         return previous_reports
 
+    def get_perfect_money_marathon(self):
+        marathon = 0
+        # Go most recent to least recent
+        for report in reversed(self.get_previous_reports()):
+            if report.money_off_by == 0:
+                marathon += 1
+            else:
+                break
+        return marathon
+
     def get_dreams_this_year(self):
         if self.is_past_2017():
             return sum(report.get_dreams() for report in self.get_previous_reports())

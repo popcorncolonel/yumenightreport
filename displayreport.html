@@ -166,6 +166,12 @@
     {{ entry("Money off by", "money_off_by", type="number", class="shorttextbox", prefix="$") }}
     </div> 
 
+    {% if not form %}
+    <div class="textcenter">
+    {{ entry("Perfect money marathon days in a row", "perfect_money_marathon", type="number", class="shorttextbox") }}
+    </div>
+    {% endif %}
+
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
