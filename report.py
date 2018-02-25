@@ -64,7 +64,7 @@ class Report(ndb.Model):
         if self.is_finalized():
             older_reports.append(self)
         previous_reports = older_reports
-        return previous_reports
+        return sorted(previous_reports, key=lambda x: x.date)
 
     def get_perfect_money_marathon(self):
         marathon = 0
