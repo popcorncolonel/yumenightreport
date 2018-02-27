@@ -442,6 +442,41 @@ class PreviewReportHandler(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 
+class StatsHandler(webapp2.RequestHandler):
+    '''
+    Handler to view statistics about the reports. GET only.
+    '''
+    def get(self):
+        this_year = datetime.datetime.now().year
+        this_month = datetime.datetime.now().month
+        january_1_this_year = datetime.datetime.strptime('01/01/{}'.format(this_year), '%m/%d/%Y')
+        december_31_this_year = datetime.datetime.strptime('12/31/{}'.format(this_year), '%m/%d/%Y')
+        reports_this_year = Report.query(ndb.AND(
+            Report.date >= january_1_this_year,
+            Report.date <= december_31_this_year,
+        ))
+        def make_dict_for_month(month):
+            month_reports = [x for x in reports_this_year if x.date.month == month and x.is_finalized()]
+            return {
+                'total_dreams': sum(report.get_dreams() for report in month_reports),
+                'total_dreamers': sum(report.get_dreamers() for report in month_reports),
+                'total_customers': sum(report.get_customers_today() for report in month_reports),
+                'average_dreams': sum(report.get_dreams() for report in month_reports) / float(len(month_reports)),
+                'average_dreamers': sum(report.get_dreamers() for report in month_reports) / float(len(month_reports)),
+                'average_customers': sum(report.get_customers_today() for report in month_reports) / float(len(month_reports)),
+                'average_dream_achievement_rate': "{:.2f}".format(
+                    sum(report.get_achievement_rate() for report in month_reports) / float(len(month_reports))),
+                'num_reports': len(month_reports),
+                'month_string': datetime.datetime.strptime('2018-{:02d}-01'.format(month), '%Y-%m-%d').strftime('%B'),
+            }
+        monthly_stats_list = [make_dict_for_month(month_num) for month_num in range(this_month, 0, -1)]
+        template_values = {}
+        template_values['global_stats'] = get_global_stats()
+        template_values['monthly_stats_list'] = monthly_stats_list
+        template = JINJA_ENVIRONMENT.get_template('stats.html')
+        self.response.write(template.render(template_values))
+
+
 class EditGoalHandler(webapp2.RequestHandler):
     '''
     Handler to edit the goals.
@@ -499,6 +534,7 @@ app = webapp2.WSGIApplication([
     (r'/report/(\d\d\d\d-\d\d-\d\d)', ViewReportHandler),
     (r'/createreport', CreateReportHandler),
     (r'/previewreport', PreviewReportHandler),
+    (r'/stats', StatsHandler),
     (r'/editgoals', EditGoalHandler),
     (r'/deletereport/(\d\d\d\d-\d\d-\d\d)', DeleteReportHandler),
     (r'/', MainHandler),
