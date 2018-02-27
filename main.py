@@ -461,9 +461,9 @@ class StatsHandler(webapp2.RequestHandler):
                 'total_dreams': sum(report.get_dreams() for report in month_reports),
                 'total_dreamers': sum(report.get_dreamers() for report in month_reports),
                 'total_customers': sum(report.get_customers_today() for report in month_reports),
-                'average_dreams': sum(report.get_dreams() for report in month_reports) / float(len(month_reports)),
-                'average_dreamers': sum(report.get_dreamers() for report in month_reports) / float(len(month_reports)),
-                'average_customers': sum(report.get_customers_today() for report in month_reports) / float(len(month_reports)),
+                'average_dreams': '{:.2f}'.format(sum(report.get_dreams() for report in month_reports) / float(len(month_reports))),
+                'average_dreamers': '{:.2f}'.format(sum(report.get_dreamers() for report in month_reports) / float(len(month_reports))),
+                'average_customers': '{:.2f}'.format(sum(report.get_customers_today() for report in month_reports) / float(len(month_reports))),
                 'average_dream_achievement_rate': "{:.2f}".format(
                     sum(report.get_achievement_rate() for report in month_reports) / float(len(month_reports))),
                 'num_reports': len(month_reports),
