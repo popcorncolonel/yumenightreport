@@ -457,15 +457,23 @@ class StatsHandler(webapp2.RequestHandler):
         ))
         def make_dict_for_month(month):
             month_reports = [x for x in reports_this_year if x.date.month == month and x.is_finalized()]
+            denom = len(month_reports) if len(month_reports) > 0 else 1
+            sum_dreams = 0
+            sum_dreamers = 0
+            sum_customers = 0
+            for report in month_reports:
+                sum_dreams += report.get_dreams()
+                sum_dreamers += report.get_dreamers()
+                sum_customers += report.get_customers_today()
             return {
-                'total_dreams': sum(report.get_dreams() for report in month_reports),
-                'total_dreamers': sum(report.get_dreamers() for report in month_reports),
-                'total_customers': sum(report.get_customers_today() for report in month_reports),
-                'average_dreams': '{:.2f}'.format(sum(report.get_dreams() for report in month_reports) / float(len(month_reports))),
-                'average_dreamers': '{:.2f}'.format(sum(report.get_dreamers() for report in month_reports) / float(len(month_reports))),
-                'average_customers': '{:.2f}'.format(sum(report.get_customers_today() for report in month_reports) / float(len(month_reports))),
+                'total_dreams': sum_dreams,
+                'total_dreamers': sum_dreamers,
+                'total_customers': sum_customers,
+                'average_dreams': '{:.2f}'.format(sum_dreams / float(denom)),
+                'average_dreamers': '{:.2f}'.format(sum_dreamers / float(denom)),
+                'average_customers': '{:.2f}'.format(sum_customers / float(denom)),
                 'average_dream_achievement_rate': "{:.2f}".format(
-                    sum(report.get_achievement_rate() for report in month_reports) / float(len(month_reports))),
+                    sum(report.get_achievement_rate() for report in month_reports) / float(denom)),
                 'num_reports': len(month_reports),
                 'month_string': datetime.datetime.strptime('2018-{:02d}-01'.format(month), '%Y-%m-%d').strftime('%B'),
             }
