@@ -148,28 +148,42 @@
     {% if form %}
     {{ entry("End time (hh:mm)", 'end_time', class="shorttextbox") }}
     {% else %}
+    {% if form or report and report['end_time'] %}
     {{ entry("End time", "end_time") }}
     {% endif %}
     {{ hspace() }}
+    {% endif %}
+    {% if form or report and report['positive_cycle'] %}
     {{ entry("Positive cycle", "positive_cycle", type="number", class="shorttextbox", prefix="$") }}
+    {% endif %}
     </div> 
 
     <div class="textcenter">
+    {% if form or report and report['total_bowls'] %}
     {{ entry("Total bowls", "total_bowls", type="number", class="shorttextbox") }}
     {{ hspace() }}
+    {% endif %}
+    {% if form or report and report['total_cups'] %}
     {{ entry("Total cups", "total_cups", type="number", class="shorttextbox") }}
+    {% endif %}
     </div> 
 
     <div class="textcenter">
+    {% if form or report and report['chopsticks_missing'] %}
     {{ entry("Chopsticks missing", "chopsticks_missing", type="number", class="shorttextbox") }}
     {{ hspace() }}
+    {% endif %}
+    {% if form or report and report['money_off_by'] %}
     {{ entry("Money off by", "money_off_by", type="number", class="shorttextbox", prefix="$") }}
+    {% endif %}
     </div> 
 
     {% if not form %}
+    {% if form or report and report['end_time'] %}
     <div class="textcenter">
     {{ entry("Perfect money marathon days in a row", "perfect_money_marathon", type="number", class="shorttextbox") }}
     </div>
+    {% endif %}
     {% endif %}
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
@@ -266,13 +280,6 @@ function validateAllEntries(event) {
         'customers_today': /^\d+$/,
         'dreams': /^\d+$/,
         'dreamers': /^\d+$/,
-
-        'end_time': /^(\d\d:\d\d|\d\d\d\d)$/,
-        'total_bowls': /^\d+$/,
-        'chopsticks_missing': /^\d+$/,
-        'positive_cycle': /^\d+$/,
-        'total_cups': /^\d+$/,
-        'money_off_by': /^\$?\-?\d+$/,
     };
     var allValid = true;
     var anyValid = false;

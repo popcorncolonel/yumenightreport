@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="fixedwidthreport">
+    <strong>Total yearly dreams</strong>: <span> {{ global_stats.dreams_this_year }}</span>
+    <br>
+    <strong>Dream Goal</strong>: {{ global_stats.dreams_this_year }}
+    <br>
+    <strong>Dreams remaining until goal</strong>: <span>
+    {% if global_stats.yearly_dream_goal - global_stats.dreams_this_year > 0 %}
+    {{ global_stats.yearly_dream_goal - global_stats.dreams_this_year }}
+    {% else %}
+    0
+    {% endif %}
+    </span>
+    <br>
+    <hl>
+    <br>
+    {% for stats_dict in monthly_stats_list %}
+        <h2> {{ stats_dict['month_string'] }} </h2>
+        <div> <strong>Total monthly dreams</strong>: {{ stats_dict['total_dreams'] }} </div>
+        <div> <strong>Total monthly dreamers</strong>: {{ stats_dict['total_dreamers'] }} </div>
+        <div> <strong>Total monthly customers</strong>: {{ stats_dict['total_customers'] }} </div>
+        <br>
+        <div> <strong>Average dreams per shift</strong>: {{ stats_dict['average_dreams'] }} </div>
+        <div> <strong>Average dreamers per shift</strong>: {{ stats_dict['average_dreamers'] }} </div>
+        <div> <strong>Average customers per shift</strong>: {{ stats_dict['average_customers'] }} </div>
+        <div> <strong>Average dream achievement rate</strong>: {{ stats_dict['average_dream_achievement_rate'] }} </div>
+    {% endfor %}
+</div>
+{% endblock %}
