@@ -13,18 +13,70 @@
     {% endif %}
     </span>
     <br>
-    <hl>
-    <br>
+    <hr>
     {% for stats_dict in monthly_stats_list %}
-        <h2> {{ stats_dict['month_string'] }} </h2>
-        <div> <strong>Total monthly dreams</strong>: {{ stats_dict['total_dreams'] }} </div>
-        <div> <strong>Total monthly dreamers</strong>: {{ stats_dict['total_dreamers'] }} </div>
-        <div> <strong>Total monthly customers</strong>: {{ stats_dict['total_customers'] }} </div>
+        <h2> {{ stats_dict['month_string'] }} ({{ stats_dict['num_reports'] }} shifts) </h2>
+        <table>
+        <tr>
+            <th></th>
+            <th> Lunch dreams </th>
+            <th> Lunch dreamers </th>
+            <th> Lunch customers </th>
+            <th> Dinner dreams </th>
+            <th> Dinner dreamers </th>
+            <th> Dinner customers </th>
+        </tr>
+        <tr>
+            <td> <strong> Average </strong> </td>
+            <td> {{ stats_dict['average_lunch_dreams'] }} </td>
+            <td> {{ stats_dict['average_lunch_dreamers'] }} </td>
+            <td> {{ stats_dict['average_lunch_customers'] }} </td>
+            <td> {{ stats_dict['average_dinner_dreams'] }} </td>
+            <td> {{ stats_dict['average_dinner_dreamers'] }} </td>
+            <td> {{ stats_dict['average_dinner_customers'] }} </td>
+        </tr>
+        <tr>
+            <td> <strong> Total </strong> </td>
+            <td> {{ stats_dict['total_lunch_dreams'] }} </td>
+            <td> {{ stats_dict['total_lunch_dreamers'] }} </td>
+            <td> {{ stats_dict['total_lunch_customers'] }} </td>
+            <td> {{ stats_dict['total_dinner_dreams'] }} </td>
+            <td> {{ stats_dict['total_dinner_dreamers'] }} </td>
+            <td> {{ stats_dict['total_dinner_customers'] }} </td>
+        </tr>
+        </table>
+
         <br>
-        <div> <strong>Average dreams per shift</strong>: {{ stats_dict['average_dreams'] }} </div>
-        <div> <strong>Average dreamers per shift</strong>: {{ stats_dict['average_dreamers'] }} </div>
-        <div> <strong>Average customers per shift</strong>: {{ stats_dict['average_customers'] }} </div>
-        <div> <strong>Average dream achievement rate</strong>: {{ stats_dict['average_dream_achievement_rate'] }} </div>
+        <div> <strong>Average dream achievement rate</strong>: {{ stats_dict['average_dream_achievement_rate'] }}% </div>
     {% endfor %}
+
+    <br>
+    <hr>
+    <br>
+
+    <h2> Weekly customer counts: </h2>
+    <table>
+    <tr>
+        <th> Date </th>
+        <th> Tuesday </th>
+        <th> Wednesday </th>
+        <th> Thursday </th>
+        <th> Friday </th>
+        <th> Saturday </th>
+        <th> Total </th>
+    </tr>
+    {% for (tue, wed, thu, fri, sat, total) in weekly_stats_matrix %}
+    <tr>
+        <td> {{ tue[0].strftime('%b %-d') }} </td>
+        <td> {{ tue[1] }} </td>
+        <td> {{ wed[1] }} </td>
+        <td> {{ thu[1] }} </td>
+        <td> {{ fri[1] }} </td>
+        <td> {{ sat[1] }} </td>
+        <td> {{ total }} </td>
+    </tr>
+    {% endfor %}
+    </table>
+
 </div>
 {% endblock %}

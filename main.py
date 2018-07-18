@@ -266,8 +266,6 @@ def _deprecated_update_global_stats_with_report_info(report, old_report, overwri
                     current_global_stats.dreams_this_year -= overwriting_report.get_dreams()
         current_global_stats.customers_this_year += report.get_customers_today()
         current_global_stats.dreams_this_year += report.get_dreams()
-        print("DBG: updating global stats -- report dreams == {}".format(report.get_dreams()))
-        print("DBG: updating global stats -- dreams == {}".format(current_global_stats.dreams_this_year))
         current_global_stats.put()
 
 
@@ -412,7 +410,6 @@ class CreateReportHandler(webapp2.RequestHandler):
         # create a new Report object and save it to ndb
         old_date_string = self.request.get('old_date_string', None)
         new_report = get_report_from_request(self.request, update_global_stats=True, prev_date=old_date_string)
-        print('DBG: posting new report: {}'.format(new_report))
         new_report.put()
         #if old_date_string != "" and old_date_string is not None:
         #    if old_date_string != new_report.date_string:
@@ -446,41 +443,93 @@ class StatsHandler(webapp2.RequestHandler):
     '''
     Handler to view statistics about the reports. GET only.
     '''
+
+    def _make_dict_for_month(self, month, reports_this_year):
+        month_reports = [x for x in reports_this_year if x.date.month == month and x.is_finalized()]
+        denom = len(month_reports) if len(month_reports) > 0 else 1
+        sum_lunch_dreams = 0
+        sum_lunch_dreamers = 0
+        sum_lunch_customers = 0
+        sum_dinner_dreams = 0
+        sum_dinner_dreamers = 0
+        sum_dinner_customers = 0
+        for report in month_reports:
+            sum_lunch_dreams += report.lunch_dreams
+            sum_dinner_dreams += report.dinner_dreams
+            sum_lunch_dreamers += report.lunch_dreamers
+            sum_dinner_dreamers += report.dinner_dreamers
+            sum_lunch_customers += report.lunch_customers_today
+            sum_dinner_customers += report.dinner_customers_today
+        return {
+            'total_lunch_dreams': sum_lunch_dreams,
+            'total_dinner_dreams': sum_dinner_dreams,
+            'total_lunch_dreamers': sum_lunch_dreamers,
+            'total_dinner_dreamers': sum_dinner_dreamers,
+            'total_lunch_customers': sum_lunch_customers,
+            'total_dinner_customers': sum_dinner_customers,
+
+            'average_lunch_dreams': '{:.2f}'.format(sum_lunch_dreams / float(denom)),
+            'average_dinner_dreams': '{:.2f}'.format(sum_dinner_dreams / float(denom)),
+            'average_lunch_dreamers': '{:.2f}'.format(sum_lunch_dreamers / float(denom)),
+            'average_dinner_dreamers': '{:.2f}'.format(sum_dinner_dreamers / float(denom)),
+            'average_lunch_customers': '{:.2f}'.format(sum_lunch_customers / float(denom)),
+            'average_dinner_customers': '{:.2f}'.format(sum_dinner_customers / float(denom)),
+
+            'average_dream_achievement_rate': "{:.2f}".format(
+                sum(report.get_achievement_rate() for report in month_reports) / float(denom)),
+            'num_reports': len(month_reports),
+            'month_string': datetime.datetime.strptime('2018-{:02d}-01'.format(month), '%Y-%m-%d').strftime('%B'),
+        }
+
+    def _make_weekly_dict(self, reports_this_year):
+        '''
+        Returns a dict with keys = "Tuesday", ..., "Saturday"
+                            vals = [(date, customer count), ...] pairs
+        i.e. dict['Tuesday'] = [(Jan 01, 98), (Jan 08, 90), ...]
+
+        Guaranteed to be fully populated with every week up until today's date.
+        '''
+        open_days = {'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'}
+        d = {day: [] for day in open_days}
+        for report in sorted(reports_this_year, key=lambda x: x.date):
+            weekday = report.date.strftime("%A")
+            if weekday in open_days:
+                # If we missed a week, add in a dummy '0' report
+                if len(d[weekday]) > 0:
+                    most_recent_date = d[weekday][-1][0]
+                    while (report.date - most_recent_date) > datetime.timedelta(weeks=1):
+                        d[weekday].append((most_recent_date + datetime.timedelta(weeks=1), 0))
+                        most_recent_date = d[weekday][-1][0]
+                d[weekday].append((report.date, report.get_customers_today()))
+        tuesday_len = len(d['Tuesday'])
+        for day in open_days:
+            d[day] = list(reversed(d[day]))
+        for day in ['Wednesday', 'Thursday', 'Friday', 'Saturday']:
+            while len(d[day]) < tuesday_len:
+                d[day].append((datetime.datetime.now(), ""))
+        return d
+
     def get(self):
         this_year = datetime.datetime.now().year
         this_month = datetime.datetime.now().month
         january_1_this_year = datetime.datetime.strptime('01/01/{}'.format(this_year), '%m/%d/%Y')
         december_31_this_year = datetime.datetime.strptime('12/31/{}'.format(this_year), '%m/%d/%Y')
-        reports_this_year = Report.query(ndb.AND(
+        reports_this_year = [report for report in Report.query(ndb.AND(
             Report.date >= january_1_this_year,
             Report.date <= december_31_this_year,
-        ))
-        def make_dict_for_month(month):
-            month_reports = [x for x in reports_this_year if x.date.month == month and x.is_finalized()]
-            denom = len(month_reports) if len(month_reports) > 0 else 1
-            sum_dreams = 0
-            sum_dreamers = 0
-            sum_customers = 0
-            for report in month_reports:
-                sum_dreams += report.get_dreams()
-                sum_dreamers += report.get_dreamers()
-                sum_customers += report.get_customers_today()
-            return {
-                'total_dreams': sum_dreams,
-                'total_dreamers': sum_dreamers,
-                'total_customers': sum_customers,
-                'average_dreams': '{:.2f}'.format(sum_dreams / float(denom)),
-                'average_dreamers': '{:.2f}'.format(sum_dreamers / float(denom)),
-                'average_customers': '{:.2f}'.format(sum_customers / float(denom)),
-                'average_dream_achievement_rate': "{:.2f}".format(
-                    sum(report.get_achievement_rate() for report in month_reports) / float(denom)),
-                'num_reports': len(month_reports),
-                'month_string': datetime.datetime.strptime('2018-{:02d}-01'.format(month), '%Y-%m-%d').strftime('%B'),
-            }
-        monthly_stats_list = [make_dict_for_month(month_num) for month_num in range(this_month, 0, -1)]
+        )) if report.is_finalized()]
+        monthly_stats_list = [self._make_dict_for_month(month_num, reports_this_year) for month_num in range(this_month, 0, -1)]
         template_values = {}
         template_values['global_stats'] = get_global_stats()
         template_values['monthly_stats_list'] = monthly_stats_list
+        weekly_stats_dict = self._make_weekly_dict(reports_this_year)
+        weekly_stats_matrix = list(zip(weekly_stats_dict['Tuesday'], weekly_stats_dict['Wednesday'], weekly_stats_dict['Thursday'], weekly_stats_dict['Friday'], weekly_stats_dict['Saturday']))
+        for i, week in enumerate(weekly_stats_matrix):
+            print(week)
+            total_customers = sum(day[1] for day in week if type(day[1]) == int)
+            weekly_stats_matrix[i] = [x for x in week] + [total_customers]
+        print("STATS MATRIX: {}".format(weekly_stats_matrix))
+        template_values['weekly_stats_matrix'] = weekly_stats_matrix
         template = JINJA_ENVIRONMENT.get_template('stats.html')
         self.response.write(template.render(template_values))
 
