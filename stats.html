@@ -54,7 +54,7 @@
     <hr>
     <br>
 
-    <h2> Weekly customer counts: </h2>
+    <h2> Weekly customer counts (lunch): </h2>
     <table>
     <tr>
         <th> Date </th>
@@ -65,7 +65,32 @@
         <th> Saturday </th>
         <th> Total </th>
     </tr>
-    {% for (tue, wed, thu, fri, sat, total) in weekly_stats_matrix %}
+    {% for (tue, wed, thu, fri, sat, total) in weekly_lunch_stats_matrix %}
+    <tr>
+        <td> {{ tue[0].strftime('%b %-d') }} </td>
+        <td> {{ tue[1] }} </td>
+        <td> {{ wed[1] }} </td>
+        <td> {{ thu[1] }} </td>
+        <td> {{ fri[1] }} </td>
+        <td> {{ sat[1] }} </td>
+        <td> {{ total }} </td>
+    </tr>
+    {% endfor %}
+    </table>
+
+
+    <h2> Weekly customer counts (dinner): </h2>
+    <table>
+    <tr>
+        <th> Date </th>
+        <th> Tuesday </th>
+        <th> Wednesday </th>
+        <th> Thursday </th>
+        <th> Friday </th>
+        <th> Saturday </th>
+        <th> Total </th>
+    </tr>
+    {% for (tue, wed, thu, fri, sat, total) in weekly_dinner_stats_matrix %}
     <tr>
         <td> {{ tue[0].strftime('%b %-d') }} </td>
         <td> {{ tue[1] }} </td>

@@ -481,14 +481,16 @@ class StatsHandler(webapp2.RequestHandler):
             'month_string': datetime.datetime.strptime('2018-{:02d}-01'.format(month), '%Y-%m-%d').strftime('%B'),
         }
 
-    def _make_weekly_dict(self, reports_this_year):
+    def _make_weekly_dict(self, reports_this_year, lunch_or_dinner):
         '''
         Returns a dict with keys = "Tuesday", ..., "Saturday"
                             vals = [(date, customer count), ...] pairs
         i.e. dict['Tuesday'] = [(Jan 01, 98), (Jan 08, 90), ...]
 
         Guaranteed to be fully populated with every week up until today's date.
+        `lunch_or_dinner` must be 'lunch' or 'dinner'.
         '''
+        assert lunch_or_dinner in {'lunch', 'dinner'}
         open_days = {'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'}
         d = {day: [] for day in open_days}
         for report in sorted(reports_this_year, key=lambda x: x.date):
@@ -500,7 +502,10 @@ class StatsHandler(webapp2.RequestHandler):
                     while (report.date - most_recent_date) > datetime.timedelta(weeks=1):
                         d[weekday].append((most_recent_date + datetime.timedelta(weeks=1), 0))
                         most_recent_date = d[weekday][-1][0]
-                d[weekday].append((report.date, report.get_customers_today()))
+                if lunch_or_dinner == 'lunch':
+                    d[weekday].append((report.date, report.lunch_customers_today))
+                else:
+                    d[weekday].append((report.date, report.dinner_customers_today))
         tuesday_len = len(d['Tuesday'])
         for day in open_days:
             d[day] = list(reversed(d[day]))
@@ -522,14 +527,32 @@ class StatsHandler(webapp2.RequestHandler):
         template_values = {}
         template_values['global_stats'] = get_global_stats()
         template_values['monthly_stats_list'] = monthly_stats_list
-        weekly_stats_dict = self._make_weekly_dict(reports_this_year)
-        weekly_stats_matrix = list(zip(weekly_stats_dict['Tuesday'], weekly_stats_dict['Wednesday'], weekly_stats_dict['Thursday'], weekly_stats_dict['Friday'], weekly_stats_dict['Saturday']))
-        for i, week in enumerate(weekly_stats_matrix):
+        weekly_lunch_stats_dict = self._make_weekly_dict(reports_this_year, 'lunch')
+        weekly_dinner_stats_dict = self._make_weekly_dict(reports_this_year, 'dinner')
+        weekly_lunch_stats_matrix = list(zip(
+            weekly_lunch_stats_dict['Tuesday'],
+            weekly_lunch_stats_dict['Wednesday'],
+            weekly_lunch_stats_dict['Thursday'],
+            weekly_lunch_stats_dict['Friday'],
+            weekly_lunch_stats_dict['Saturday'],
+        ))
+        weekly_dinner_stats_matrix = list(zip(
+            weekly_dinner_stats_dict['Tuesday'],
+            weekly_dinner_stats_dict['Wednesday'],
+            weekly_dinner_stats_dict['Thursday'],
+            weekly_dinner_stats_dict['Friday'],
+            weekly_dinner_stats_dict['Saturday'],
+        ))
+        for i, week in enumerate(weekly_lunch_stats_matrix):
             print(week)
             total_customers = sum(day[1] for day in week if type(day[1]) == int)
-            weekly_stats_matrix[i] = [x for x in week] + [total_customers]
-        print("STATS MATRIX: {}".format(weekly_stats_matrix))
-        template_values['weekly_stats_matrix'] = weekly_stats_matrix
+            weekly_lunch_stats_matrix[i] = [x for x in week] + [total_customers]
+        for i, week in enumerate(weekly_dinner_stats_matrix):
+            print(week)
+            total_customers = sum(day[1] for day in week if type(day[1]) == int)
+            weekly_dinner_stats_matrix[i] = [x for x in week] + [total_customers]
+        template_values['weekly_lunch_stats_matrix'] = weekly_lunch_stats_matrix
+        template_values['weekly_dinner_stats_matrix'] = weekly_dinner_stats_matrix
         template = JINJA_ENVIRONMENT.get_template('stats.html')
         self.response.write(template.render(template_values))
 
