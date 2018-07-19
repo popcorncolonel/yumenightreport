@@ -493,22 +493,26 @@ class StatsHandler(webapp2.RequestHandler):
         assert lunch_or_dinner in {'lunch', 'dinner'}
         open_days = {'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'}
         d = {day: [] for day in open_days}
-        for report in sorted(reports_this_year, key=lambda x: x.date):
+        # Go back in time until we see the first saturday in reverse order (i.e. a full complete week tuesday-saturday)
+        found_first_saturday = False
+        for report in sorted(reports_this_year, key=lambda x: x.date, reverse=True):
             weekday = report.date.strftime("%A")
+            if not found_first_saturday and weekday != 'Saturday':
+                continue
+            found_first_saturday = True
             if weekday in open_days:
                 # If we missed a week, add in a dummy '0' report
                 if len(d[weekday]) > 0:
-                    most_recent_date = d[weekday][-1][0]
-                    while (report.date - most_recent_date) > datetime.timedelta(weeks=1):
-                        d[weekday].append((most_recent_date + datetime.timedelta(weeks=1), 0))
-                        most_recent_date = d[weekday][-1][0]
+                    prev_date = d[weekday][-1][0]
+                    # Previously added date could be, e.g. 7/17/18 and current date = 7/10/18
+                    while (prev_date - report.date) > datetime.timedelta(weeks=1):
+                        d[weekday].append((prev_date - datetime.timedelta(weeks=1), 0))
+                        prev_date = d[weekday][-1][0]
                 if lunch_or_dinner == 'lunch':
                     d[weekday].append((report.date, report.lunch_customers_today))
                 else:
                     d[weekday].append((report.date, report.dinner_customers_today))
         tuesday_len = len(d['Tuesday'])
-        for day in open_days:
-            d[day] = list(reversed(d[day]))
         for day in ['Wednesday', 'Thursday', 'Friday', 'Saturday']:
             while len(d[day]) < tuesday_len:
                 d[day].append((datetime.datetime.now(), ""))
