@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="fixedwidthreport">
-    <strong>Total yearly dreams</strong>: <span> {{ global_stats.dreams_this_year }}</span>
+    <strong>Total yearly dreams</strong>: <span> {{ goals.dreams_this_year }}</span>
     <br>
-    <strong>Dream Goal</strong>: {{ global_stats.dreams_this_year }}
+    <strong>Dream Goal</strong>: {{ goals.dreams_this_year }}
     <br>
     <strong>Dreams remaining until goal</strong>: <span>
-    {% if global_stats.yearly_dream_goal - global_stats.dreams_this_year > 0 %}
-    {{ global_stats.yearly_dream_goal - global_stats.dreams_this_year }}
+    {% if goals.yearly_dream_goal - goals.dreams_this_year > 0 %}
+    {{ goals.yearly_dream_goal - goals.dreams_this_year }}
     {% else %}
     0
     {% endif %}

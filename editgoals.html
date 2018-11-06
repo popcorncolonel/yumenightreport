@@ -6,13 +6,13 @@
 <h3>Goals:</h3>
 
 Yearly dream goal: 
-<input name='yearly_dream_goal' value="{{ global_stats.yearly_dream_goal }}" type="number"/>
+<input name='yearly_dream_goal' value="{{ goals.yearly_dream_goal }}" type="number"/>
 <br>
 Month goal: 
-<input name='month_goal' value="{{ global_stats.month_goal }}" type="text"/>
+<input name='month_goal' value="{{ goals.month_goal }}" type="text"/>
 <br>
 Year goal: 
-<input name='year_goal' value="{{ global_stats.year_goal }}" type="text"/>
+<input name='year_goal' value="{{ goals.year_goal }}" type="text"/>
 
 <br>
 <br>
@@ -22,13 +22,13 @@ Year goal:
 <hr>
 
 <h3>Statistics:</h3>
-<strong>Total yearly customers</strong>: <span>{{ global_stats.customers_this_year }}</span>
+<strong>Total yearly customers</strong>: <span>{{ goals.customers_this_year }}</span>
 <br>
-<strong>Total yearly dreams</strong>: <span> {{ global_stats.dreams_this_year }}</span>
+<strong>Total yearly dreams</strong>: <span> {{ goals.dreams_this_year }}</span>
 <br>
 <strong>Dreams remaining until goal</strong>: <span>
-{% if global_stats.yearly_dream_goal - global_stats.dreams_this_year > 0 %}
-{{ global_stats.yearly_dream_goal - global_stats.dreams_this_year }}
+{% if goals.yearly_dream_goal - goals.dreams_this_year > 0 %}
+{{ goals.yearly_dream_goal - goals.dreams_this_year }}
 {% else %} 
 0
 {% endif %}

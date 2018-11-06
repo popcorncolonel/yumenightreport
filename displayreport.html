@@ -61,20 +61,20 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    <strong>Yearly goal</strong>: <span name='year_goal'> {{ report['year_goal'] if report['year_goal'] else global_stats.year_goal }} </span>
+    <strong>Yearly goal</strong>: <span name='year_goal'> {{ report['year_goal'] if report['year_goal'] else goals.year_goal }} </span>
     {{ hspace() }}
-    <strong>Monthly goal</strong>: <span name='month_goal'> {{ report['month_goal'] if report['month_goal'] else global_stats.month_goal }} </span>
+    <strong>Monthly goal</strong>: <span name='month_goal'> {{ report['month_goal'] if report['month_goal'] else goals.month_goal }} </span>
     </div> 
     <div class="textcenter">
-    <strong>Yearly dream goal</strong>: <span name='yearly_dream_goal'> {{ report['yearly_dream_goal'] if report['yearly_dream_goal'] else global_stats.yearly_dream_goal }} </span>
+    <strong>Yearly dream goal</strong>: <span name='yearly_dream_goal'> {{ report['yearly_dream_goal'] if report['yearly_dream_goal'] else goals.yearly_dream_goal }} </span>
     {{ hspace() }}
     <strong>Daily dream goal</strong>: <span name='daily_dream_goal'>
     {% if 'daily_dream_goal' in report %}
     {{ report['daily_dream_goal'] }}
     {% elif 'datetime_obj' in report %}
-    {{ global_stats.daily_dream_goal(datetime_obj=report['datetime_obj']) }}
+    {{ goals.daily_dream_goal(datetime_obj=report['datetime_obj']) }}
     {% else %}
-    {{ global_stats.daily_dream_goal() }}
+    {{ goals.daily_dream_goal() }}
     {% endif %}
     </span>
     </div> 
@@ -223,11 +223,9 @@
 {% elif preview %}
 <input type="submit" class="btn" value="Submit" formaction="/createreport" formmethod="post"/>
 {% else %}
-{% if report['is_past_2017'] %}
 <form id="delete-form" action="/deletereport/{{ report['date_string'] }}" method="post" style="display: inline;">
 <button onclick="delete_button_click()" class="btn">Delete</button>
 </form>
-{% endif %}
 {% endif %}
 
 </div> 
