@@ -50,6 +50,11 @@ class Report(ndb.Model):
     money_off_by = ndb.IntegerProperty()
     positive_cycle = ndb.IntegerProperty()
 
+    # hack for optimization. computes all stats based on the specificed list of Reports, but
+    # needs to be passed in beforehand. probably don't put() a Report with this attribute
+    # set, who knows what'll happen
+    report_list = None
+
     def is_past_2017(self):
         from main import is_past_2017
         return is_past_2017(self.date)
@@ -60,7 +65,7 @@ class Report(ndb.Model):
             date = (datetime.datetime.now() - datetime.timedelta(hours=12)).date()
         else:
             date = self.date.date()
-        older_reports = [report for report in Report.get_reports_for_year(date) if report.date.date() < date]
+        older_reports = [report for report in self.get_reports_for_year(date) if report.date.date() < date]
         if self.is_finalized():
             older_reports.append(self)
         previous_reports = older_reports
@@ -125,7 +130,7 @@ class Report(ndb.Model):
         if working_days_left_in_year == 0:
             return 1
         if self.is_past_2017():
-            total_dreams_for_year = Report.get_dreams_for_year(date)
+            total_dreams_for_year = self.get_dreams_for_year2(date)
         else:
             total_dreams_for_year = self.dreams_this_year
         dreams_remaining = max(0, self.yearly_dream_goal - total_dreams_for_year)
@@ -150,23 +155,43 @@ class Report(ndb.Model):
     def get_all_reports():
         return Report.query().order(-Report.date).fetch()
 
-    @staticmethod
-    def get_reports_for_year(datetime_obj):
+    def get_reports_for_year2(self, datetime_obj):
         ''' Gets all reports logged in the year of `datetime_obj` '''
-        all_reports = Report.get_all_reports()
+        if self.report_list is not None:
+            all_reports = self.report_list
+        else:
+            all_reports = Report.get_all_reports()
+        return [x for x in all_reports if x.date.date().year == datetime_obj.year and x.is_finalized()]
+
+    def get_dreams_for_year2(self, datetime_obj):
+        return sum(report.get_dreams() for report in self.get_reports_for_year2(datetime_obj))
+
+    def get_dreamers_for_year2(self, datetime_obj):
+        return sum(report.get_dreamers() for report in self.get_reports_for_year2(datetime_obj))
+
+    def get_customers_for_year2(self, datetime_obj):
+        return sum(report.get_customers_today() for report in self.get_reports_for_year2(datetime_obj))
+
+    @staticmethod
+    def get_reports_for_year(datetime_obj, report_list=None):
+        ''' Gets all reports logged in the year of `datetime_obj` '''
+        if report_list is not None:
+            all_reports = report_list
+        else:
+            all_reports = Report.get_all_reports()
         return [x for x in all_reports if x.date.date().year == datetime_obj.year and x.is_finalized()]
 
     @staticmethod
-    def get_dreams_for_year(datetime_obj):
-        return sum(report.get_dreams() for report in Report.get_reports_for_year(datetime_obj))
+    def get_dreams_for_year(datetime_obj, report_list=None):
+        return sum(report.get_dreams() for report in Report.get_reports_for_year(datetime_obj, report_list))
 
     @staticmethod
-    def get_dreamers_for_year(datetime_obj):
-        return sum(report.get_dreamers() for report in Report.get_reports_for_year(datetime_obj))
+    def get_dreamers_for_year(datetime_obj, report_list=None):
+        return sum(report.get_dreamers() for report in Report.get_reports_for_year(datetime_obj, report_list))
 
     @staticmethod
-    def get_customers_for_year(datetime_obj):
-        return sum(report.get_customers_today() for report in Report.get_reports_for_year(datetime_obj))
+    def get_customers_for_year(datetime_obj, report_list=None):
+        return sum(report.get_customers_today() for report in Report.get_reports_for_year(datetime_obj, report_list))
 
     @property
     def date_string(self):

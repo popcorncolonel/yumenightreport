@@ -444,6 +444,47 @@ class StatsHandler(webapp2.RequestHandler):
     Handler to view statistics about the reports. GET only.
     '''
 
+    def _make_monthly_stats_list(self, monthly_stats_list, reports_this_year):
+        for i in range(len(monthly_stats_list)):
+            monthly_stats_list[i] = {
+                'total_lunch_dreams': 0,
+                'total_dinner_dreams': 0,
+                'total_lunch_dreamers': 0,
+                'total_dinner_dreamers': 0,
+                'total_lunch_customers': 0,
+                'total_dinner_customers': 0,
+
+                'denom': 0,
+            }
+        for report in reports_this_year:
+            report.report_list = reports_this_year
+            monthly_stats_list[report.date.month - 1]['total_lunch_dreams'] += report.lunch_dreams
+            monthly_stats_list[report.date.month - 1]['total_dinner_dreams'] += report.dinner_dreams
+            monthly_stats_list[report.date.month - 1]['total_lunch_dreamers'] += report.lunch_dreamers
+            monthly_stats_list[report.date.month - 1]['total_dinner_dreamers'] += report.dinner_dreamers
+            monthly_stats_list[report.date.month - 1]['total_lunch_customers'] += report.lunch_customers_today
+            monthly_stats_list[report.date.month - 1]['total_dinner_customers'] += report.dinner_customers_today
+            monthly_stats_list[report.date.month - 1]['denom'] += 1
+        for report in reports_this_year:
+            month_dict = monthly_stats_list[report.date.month - 1]
+            denom = float(month_dict['denom'])
+            if 'average_dream_achievement_rate' not in month_dict:
+                month_dict['average_dream_achievement_rate'] = 0.0
+            month_dict['average_dream_achievement_rate'] += report.get_achievement_rate() / denom
+        for i, month_dict in enumerate(monthly_stats_list):
+            month_dict['average_lunch_dreams'] = '{:.2f}'.format(month_dict['total_lunch_dreams'] / max(1, month_dict['denom']))
+            month_dict['average_dinner_dreams'] = '{:.2f}'.format(month_dict['total_dinner_dreams'] / max(1, month_dict['denom']))
+            month_dict['average_lunch_dreamers'] = '{:.2f}'.format(month_dict['total_lunch_dreamers'] / max(1, month_dict['denom']))
+            month_dict['average_dinner_dreamers'] = '{:.2f}'.format(month_dict['total_dinner_dreamers'] / max(1, month_dict['denom']))
+            month_dict['average_lunch_customers'] = '{:.2f}'.format(month_dict['total_lunch_customers'] / max(1, month_dict['denom']))
+            month_dict['average_dinner_customers'] = '{:.2f}'.format(month_dict['total_dinner_customers'] / max(1, month_dict['denom']))
+            if 'average_dream_achievement_rate' in month_dict:
+                month_dict['average_dream_achievement_rate'] = "{:.2f}".format(month_dict['average_dream_achievement_rate'])
+            else:
+                month_dict['average_dream_achievement_rate'] = 0.0
+            month_dict['num_reports'] = month_dict['denom']
+            month_dict['month_string'] = datetime.datetime.strptime('2018-{:02d}-01'.format(i + 1), '%Y-%m-%d').strftime('%B'),
+
     def _make_dict_for_month(self, month, reports_this_year):
         month_reports = [x for x in reports_this_year if x.date.month == month and x.is_finalized()]
         denom = len(month_reports) if len(month_reports) > 0 else 1
@@ -527,7 +568,9 @@ class StatsHandler(webapp2.RequestHandler):
             Report.date >= january_1_this_year,
             Report.date <= december_31_this_year,
         )) if report.is_finalized()]
-        monthly_stats_list = [self._make_dict_for_month(month_num, reports_this_year) for month_num in range(this_month, 0, -1)]
+        #monthly_stats_list = [self._make_dict_for_month(month_num, reports_this_year) for month_num in range(this_month, 0, -1)]
+        monthly_stats_list = [{} for month_num in range(this_month, 0, -1)]
+        self._make_monthly_stats_list(monthly_stats_list, reports_this_year)
         template_values = {}
         template_values['global_stats'] = get_global_stats()
         template_values['monthly_stats_list'] = monthly_stats_list
