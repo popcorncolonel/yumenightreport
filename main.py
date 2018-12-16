@@ -310,6 +310,8 @@ class StatsHandler(webapp2.RequestHandler):
                 'total_lunch_customers': 0,
                 'total_dinner_customers': 0,
 
+                'lunch_denom': 0,
+                'dinner_denom': 0,
                 'denom': 0,
             }
         for report in reports_this_year:
@@ -321,6 +323,10 @@ class StatsHandler(webapp2.RequestHandler):
             monthly_stats_list[report.date.month - 1]['total_lunch_customers'] += report.lunch_customers_today
             monthly_stats_list[report.date.month - 1]['total_dinner_customers'] += report.dinner_customers_today
             monthly_stats_list[report.date.month - 1]['denom'] += 1
+            if report.lunch_dreams != 0 or report.lunch_dreamers != 0 or report.lunch_customers_today != 0:
+                monthly_stats_list[report.date.month - 1]['lunch_denom'] += 1
+            if report.dinner_dreams != 0 or report.dinner_dreamers != 0 or report.dinner_customers_today != 0:
+                monthly_stats_list[report.date.month - 1]['dinner_denom'] += 1
         for report in reports_this_year:
             month_dict = monthly_stats_list[report.date.month - 1]
             denom = float(month_dict['denom'])
@@ -328,12 +334,14 @@ class StatsHandler(webapp2.RequestHandler):
                 month_dict['average_dream_achievement_rate'] = 0.0
             month_dict['average_dream_achievement_rate'] += report.get_achievement_rate() / denom
         for i, month_dict in enumerate(monthly_stats_list):
-            month_dict['average_lunch_dreams'] = '{:.2f}'.format(month_dict['total_lunch_dreams'] / max(1, month_dict['denom']))
-            month_dict['average_dinner_dreams'] = '{:.2f}'.format(month_dict['total_dinner_dreams'] / max(1, month_dict['denom']))
-            month_dict['average_lunch_dreamers'] = '{:.2f}'.format(month_dict['total_lunch_dreamers'] / max(1, month_dict['denom']))
-            month_dict['average_dinner_dreamers'] = '{:.2f}'.format(month_dict['total_dinner_dreamers'] / max(1, month_dict['denom']))
-            month_dict['average_lunch_customers'] = '{:.2f}'.format(month_dict['total_lunch_customers'] / max(1, month_dict['denom']))
-            month_dict['average_dinner_customers'] = '{:.2f}'.format(month_dict['total_dinner_customers'] / max(1, month_dict['denom']))
+            month_dict['average_dinner_dreams'] = '{:.2f}'.format(month_dict['total_dinner_dreams'] / max(1, month_dict['dinner_denom']))
+            month_dict['average_dinner_dreamers'] = '{:.2f}'.format(month_dict['total_dinner_dreamers'] / max(1, month_dict['dinner_denom']))
+            month_dict['average_dinner_customers'] = '{:.2f}'.format(month_dict['total_dinner_customers'] / max(1, month_dict['dinner_denom']))
+
+            month_dict['average_lunch_dreams'] = '{:.2f}'.format(month_dict['total_lunch_dreams'] / max(1, month_dict['lunch_denom']))
+            month_dict['average_lunch_dreamers'] = '{:.2f}'.format(month_dict['total_lunch_dreamers'] / max(1, month_dict['lunch_denom']))
+            month_dict['average_lunch_customers'] = '{:.2f}'.format(month_dict['total_lunch_customers'] / max(1, month_dict['lunch_denom']))
+
             if 'average_dream_achievement_rate' in month_dict:
                 month_dict['average_dream_achievement_rate'] = "{:.2f}".format(month_dict['average_dream_achievement_rate'])
             else:
