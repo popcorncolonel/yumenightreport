@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="bluebackground">
+<div class="parent fixedwidthreport">
+
+<h1><u>夢 Calculator</u></h1>
+
+{% if not month_display %}
+<form action="/dreamcalculator" method="GET">
+
+<h2>What month would you like to know about?</h2>
+
+{% if max_month %}
+Month:
+<select name='month'>
+    {% for i in range(max_month) %} <option value="{{i+1}}">{{i+1}}</option> {% endfor %}
+</select>
+{% endif %}
+
+<h3>Lunch goals:</h3>
+Customer count: <input name='lunch_customers_today' value="" type="number"/>
+<br>
+Dream count: <input name='lunch_dreams' value="" type="number"/>
+<br>
+Dreamer count: <input name='lunch_dreamers' value="" type="number"/>
+<br>
+
+<h3>Dinner goals:</h3>
+Customer count: <input name='dinner_customers_today' value="" type="number"/>
+<br>
+Dream count: <input name='dinner_dreams' value="" type="number"/>
+<br>
+Dreamer count: <input name='dinner_dreamers' value="" type="number"/>
+<br>
+
+<br>
+<br>
+
+<input type="submit" class="btn" value="Submit"/>
+
+</form>
+
+{% else %}
+
+<h2>{{ month_display }}</h2>
+<h3>Lunch goals:</h3>
+Customer count ({{ goal_lunch_customers_today }} per day):
+{{ actual_lunch_customers_today }} / {{ expected_lunch_customers_today }} ({{ percent_lunch_customers_today }}%)
+<br>
+Dream count ({{ goal_lunch_dreams }} per day):
+{{ actual_lunch_dreams }} / {{ expected_lunch_dreams }} ({{ percent_lunch_dreams }}%) 
+<br>
+Dreamer count ({{ goal_lunch_dreamers }} per day):
+{{ actual_lunch_dreamers }} / {{ expected_lunch_dreamers }} ({{ percent_lunch_dreamers }}%) 
+<br>
+
+<h3>Dinner goals:</h3>
+Customer count ({{ goal_dinner_customers_today }} per day):
+{{ actual_dinner_customers_today }} / {{ expected_dinner_customers_today }} ({{ percent_dinner_customers_today }}%) 
+<br>
+Dream count ({{ goal_dinner_dreams }} per day):
+{{ actual_dinner_dreams }} / {{ expected_dinner_dreams }} ({{ percent_dinner_dreams }}%)  
+<br>
+Dreamer count ({{ goal_dinner_dreamers }} per day):
+{{ actual_dinner_dreamers }} / {{ expected_dinner_dreamers }} ({{ percent_dinner_dreamers }}%)  
+<br>
+
+<br>
+<br>
+
+<form action="/dreamcalculator" method="GET">
+<input type="submit" class="btn" value="Go back"/>
+</form>
+
+
+
+{% endif %}
+
+</div>
+</div>
+
+{% endblock %}
+

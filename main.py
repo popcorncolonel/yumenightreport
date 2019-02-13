@@ -29,6 +29,66 @@ def get_working_days_left_in_year(date_obj):
     return working_days_until_year_end
 
 
+def get_reports_this_year(force_datetime=None):
+    if force_datetime is not None and len(force_datetime) > 0:
+        this_datetime = force_datetime
+    else:
+        this_datetime = datetime.datetime.now()
+    this_year = this_datetime.year
+    this_month = this_datetime.month
+    january_1_this_year = datetime.datetime.strptime('01/01/{}'.format(this_year), '%m/%d/%Y')
+    december_31_this_year = datetime.datetime.strptime('12/31/{}'.format(this_year), '%m/%d/%Y')
+    reports_this_year = [report for report in Report.query(ndb.AND(
+        Report.date >= january_1_this_year,
+        Report.date <= december_31_this_year,
+    )) if report.is_finalized()]
+    return reports_this_year
+
+
+def get_reports_this_month(month_num):
+    this_datetime = datetime.datetime.now()
+    this_year = this_datetime.year
+    month_beginning = datetime.datetime.strptime('{:02d}/01/{:04d}'.format(month_num, this_year), '%m/%d/%Y')
+    if month_num < 12:
+        next_month_beginning = datetime.datetime.strptime('{:02d}/01/{:04d}'.format(month_num + 1, this_year), '%m/%d/%Y')
+    else:
+        next_month_beginning = datetime.datetime.strptime('01/01/{}'.format(this_year + 1), '%m/%d/%Y')
+    reports_this_month = [report for report in Report.query(ndb.AND(
+        Report.date >= month_beginning,
+        Report.date < next_month_beginning,
+    )) if report.is_finalized()]
+    return reports_this_month
+
+
+def calculate_dream_dicts(month_reports, goal_dict):
+    '''
+    * {Lunch, Dinner} x {Dreams, Dreamers, Customers} achievement rates, given the goals in `goal_dict`.
+    * goal_dict example: {'lunch_dreams': 50, 'lunch_dreamers': '30', 'lunch_customers': 80}, ...}
+    '''
+    actual_dict = {key: 0 for key in goal_dict}
+    num_lunch_reports = 0
+    num_dinner_reports = 0
+    for report in month_reports:
+        if report.lunch_customers_today > 0 and report.lunch_dreamers > 0 and report.lunch_dreams > 0:
+            num_lunch_reports += 1
+            actual_dict['lunch_customers_today'] += report.lunch_customers_today
+            actual_dict['lunch_dreamers'] += report.lunch_dreamers
+            actual_dict['lunch_dreams'] += report.lunch_dreams
+        if report.dinner_customers_today > 0 and report.dinner_dreamers > 0 and report.dinner_dreams > 0:
+            num_dinner_reports += 1
+            actual_dict['dinner_customers_today'] += report.dinner_customers_today
+            actual_dict['dinner_dreamers'] += report.dinner_dreamers
+            actual_dict['dinner_dreams'] += report.dinner_dreams
+
+    expected_dict = {}
+    for key in goal_dict:
+        if key.startswith('lunch'):
+            expected_dict[key] = num_lunch_reports * goal_dict[key]
+        if key.startswith('dinner'):
+            expected_dict[key] = num_dinner_reports * goal_dict[key]
+    return (actual_dict, expected_dict)
+
+
 class Goals(ndb.Model):
     yearly_dream_goal = ndb.IntegerProperty(default=0)
     year_goal = ndb.StringProperty(default="")
@@ -424,8 +484,17 @@ class StatsHandler(webapp2.RequestHandler):
         return d
 
     def get(self):
-        this_year = datetime.datetime.now().year
-        this_month = datetime.datetime.now().month
+        force_datetime = self.request.get_all('force_datetime')
+        this_datetime = datetime.datetime.now()
+        print('force_datetime: {}'.format(force_datetime))
+        if force_datetime is not None and len(force_datetime) > 0:
+            force_datetime = force_datetime[0]
+            if len(force_datetime) > 0:
+                date_fmt = '%Y-%m-%d'  # 2019-01-14 
+                force_datetime = datetime.datetime.strptime(force_datetime, date_fmt)
+        reports_this_year = get_reports_this_year(force_datetime)
+        this_year = this_datetime.year
+        this_month = this_datetime.month
         january_1_this_year = datetime.datetime.strptime('01/01/{}'.format(this_year), '%m/%d/%Y')
         december_31_this_year = datetime.datetime.strptime('12/31/{}'.format(this_year), '%m/%d/%Y')
         reports_this_year = [report for report in Report.query(ndb.AND(
@@ -500,6 +569,57 @@ class DeleteReportHandler(webapp2.RequestHandler):
         self.redirect('/')
 
 
+class DreamCalculatorHandler(webapp2.RequestHandler):
+    '''
+    Handler to . TODO: write this
+        GET here to ...
+        POST here to ...
+    '''
+    def get(self):
+        request = self.request
+        # If we have any of the proper fields (dream/lunch_*s), display them and the achievement dict, along with a back button.
+        # Otherwise, display the static page which will post to this endpoint indicating which month the user wants and the appropriate goals.
+        template_values = {}
+        this_datetime = datetime.datetime.now()
+        if (
+            request.get('month', None) is not None and
+            request.get('lunch_customers_today', None) is not None and
+            request.get('lunch_dreams', None) is not None and
+            request.get('lunch_dreamers', None) is not None and
+            request.get('dinner_customers_today', None) is not None and
+            request.get('dinner_dreams', None) is not None and
+            request.get('dinner_dreamers', None) is not None
+        ):
+            month_num = int(request.get('month', None))
+            month_datetime = datetime.datetime.strptime('{:02d}/01/{:04d}'.format(month_num, this_datetime.year), '%m/%d/%Y')
+            template_values['month_display'] = month_datetime.strftime('%B %Y')
+            reports_this_month = get_reports_this_month(month_num)
+            goal_dict = {
+                'lunch_customers_today': int(request.get('lunch_customers_today')),
+                'lunch_dreams': int(request.get('lunch_dreams')),
+                'lunch_dreamers': int(request.get('lunch_dreamers')),
+                'dinner_customers_today': int(request.get('dinner_customers_today')),
+                'dinner_dreams': int(request.get('dinner_dreams')),
+                'dinner_dreamers': int(request.get('dinner_dreamers')),
+            }
+            (actual_dict, expected_dict) = calculate_dream_dicts(reports_this_month, goal_dict)
+
+            for key in actual_dict:
+                template_values['goal_{}'.format(key)] = goal_dict[key]
+                template_values['actual_{}'.format(key)] = actual_dict[key]
+                template_values['expected_{}'.format(key)] = expected_dict[key]
+                if expected_dict[key] != 0:
+                    template_values['percent_{}'.format(key)] = "{:.2f}".format(100 * float(actual_dict[key]) / expected_dict[key])
+                else:
+                    template_values['percent_{}'.format(key)] = "100"
+        else:
+            # First pass of this page - which month is the user requesting?
+            template_values['max_month'] = this_datetime.month
+
+        template = JINJA_ENVIRONMENT.get_template('dreamcalculator.html')
+        self.response.write(template.render(template_values))
+
+
 class MainHandler(webapp2.RequestHandler):
     '''
     Main page: Links to creating a report or viewing all reports, or view most recent report?
@@ -526,6 +646,7 @@ app = webapp2.WSGIApplication([
     (r'/previewreport', PreviewReportHandler),
     (r'/stats', StatsHandler),
     (r'/editgoals', EditGoalHandler),
+    (r'/dreamcalculator', DreamCalculatorHandler),
     (r'/deletereport/(\d\d\d\d-\d\d-\d\d)', DeleteReportHandler),
     (r'/', MainHandler),
 ], debug=True)

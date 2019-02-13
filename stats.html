@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="fixedwidthreport">
+    <a href="/dreamcalculator">Yume Dream Calculator</a> <span style="color: #f22">(新しい!)</span>
+    <hr>
     <strong>Total yearly dreams</strong>: <span> {{ goals.dreams_this_year }}</span>
     <br>
-    <strong>Dream Goal</strong>: {{ goals.dreams_this_year }}
+    <strong>Dream Goal</strong>: {{ goals.yearly_dream_goal }}
     <br>
     <strong>Dreams remaining until goal</strong>: <span>
     {% if goals.yearly_dream_goal - goals.dreams_this_year > 0 %}

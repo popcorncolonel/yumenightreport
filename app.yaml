@@ -38,6 +38,10 @@ handlers:
   script: main.app
   login: admin
 
+- url: /dreamcalculator
+  script: main.app
+  login: admin
+
 - url: /report/.*
   script: main.app
   login: admin
