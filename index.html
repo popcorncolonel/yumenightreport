@@ -18,8 +18,8 @@
     <span>
     {% for recent_report in reports[:5]|reverse %}
       {% set day_letter = recent_report.readable_date_string[:3] %}
-      {% if recent_report.end_time %}
-          {% set end_time_display = day_letter + ": " + recent_report.end_time.strftime("%H:%M") %}
+      {% if recent_report.get_end_time() %}
+          {% set end_time_display = day_letter + ": " + recent_report.get_end_time().strftime("%H:%M") %}
           {{ end_time_display }}
       {% endif %}
       {% if not loop.last %}, {% endif %}
@@ -33,7 +33,7 @@
         {% for report in reports %} {# assumes list is sorted #}
         <li>
             <a href="/report/{{ report.date_string }}">{{ report.readable_date_string }} ({{ report.dreams }} dreams,
- {{ report.dreamers }} dreamers{% if report.end_time %}, {{ report.end_time.strftime("%H:%M") }} end time{% endif %})</a>
+ {{ report.dreamers }} dreamers{% if report.get_end_time() %}, {{ report.get_end_time().strftime("%H:%M") }} end time{% endif %})</a>
         </li>
         {% endfor %}
         </ul>

@@ -215,9 +215,15 @@ def _populate_dinner_totals(report):
 def _populate_report_fields_from_request(report, request):
     # Parse and populate date/time fields
     date_string = request.get('date', '')
-    end_time = request.get('end_time', '')
+    end_time_dishwasher = request.get('end_time_dishwasher', '')
+    end_time_host = request.get('end_time_host', '')
+    end_time_kitchen2 = request.get('end_time_kitchen2', '')
+    end_time_kitchen = request.get('end_time_kitchen', '')
     report.date = get_date_obj(date_string)
-    report.end_time = get_time_obj(end_time)
+    report.end_time_dishwasher = get_time_obj(end_time_dishwasher)
+    report.end_time_host = get_time_obj(end_time_host)
+    report.end_time_kitchen2 = get_time_obj(end_time_kitchen2)
+    report.end_time_kitchen = get_time_obj(end_time_kitchen)
 
     # They want to input lunch and total. So we compute dinner manually.
     report.lunch_customers_today = get_integer_input(request, 'lunch_customers_today')
@@ -227,7 +233,10 @@ def _populate_report_fields_from_request(report, request):
     report.lunch_dreamers = get_integer_input(request, 'lunch_dreamers')
     report.dreamers = get_integer_input(request, 'dreamers')
 
-    report.working_members = request.get('working_members', '')
+    report.working_dishwasher = request.get('working_dishwasher', '')
+    report.working_host = request.get('working_host', '')
+    report.working_kitchen2 = request.get('working_kitchen2', '')
+    report.working_kitchen = request.get('working_kitchen', '')
     report.supporting_members = request.get('supporting_members', '')
     report.visiting_members = request.get('visiting_members', '')
 
@@ -268,10 +277,17 @@ def create_report_dict_from_report_obj(current_report):
         'lunch_dreamers': current_report.lunch_dreamers if current_report.lunch_dreamers is not None else '',
         'dinner_dreamers': current_report.dinner_dreamers if current_report.dinner_dreamers is not None else '',
 
-        'working_members': current_report.working_members if current_report.working_members is not None else '',
+        'working_dishwasher': current_report.working_dishwasher if current_report.working_dishwasher is not None else '',
+        'working_host': current_report.working_host if current_report.working_host is not None else '',
+        'working_kitchen2': current_report.working_kitchen2 if current_report.working_kitchen2 is not None else '',
+        'working_kitchen': current_report.working_kitchen if current_report.working_kitchen is not None else '',
         'supporting_members': current_report.supporting_members if current_report.supporting_members is not None else '',
         'visiting_members': current_report.visiting_members if current_report.visiting_members is not None else '',
-        'end_time': current_report.end_time.strftime('%H:%M') if current_report.end_time is not None else '',
+        'end_time': current_report.get_end_time().strftime('%H:%M') if current_report.get_end_time() is not None else '',
+        'end_time_dishwasher': current_report.end_time_dishwasher.strftime('%H:%M') if current_report.end_time_dishwasher is not None else '',
+        'end_time_host': current_report.end_time_host.strftime('%H:%M') if current_report.end_time_host is not None else '',
+        'end_time_kitchen2': current_report.end_time_kitchen2.strftime('%H:%M') if current_report.end_time_kitchen2 is not None else '',
+        'end_time_kitchen': current_report.end_time_kitchen.strftime('%H:%M') if current_report.end_time_kitchen is not None else '',
         'positive_cycle': current_report.positive_cycle if current_report.positive_cycle is not None else '',
         'total_bowls': current_report.total_bowls if current_report.total_bowls is not None else '',
         'total_cups': current_report.total_cups if current_report.total_cups is not None else '',

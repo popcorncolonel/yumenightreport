@@ -34,9 +34,18 @@ class Report(ndb.Model):
     lunch_dreamers = ndb.IntegerProperty()
     dinner_dreamers = ndb.IntegerProperty()
 
+    working_dishwasher = ndb.StringProperty()
+    working_host = ndb.StringProperty()
+    working_kitchen2 = ndb.StringProperty()
+    working_kitchen = ndb.StringProperty()
+
     working_members = ndb.StringProperty()
     supporting_members = ndb.StringProperty()
     visiting_members = ndb.StringProperty()
+    end_time_dishwasher = ndb.TimeProperty()
+    end_time_host = ndb.TimeProperty()
+    end_time_kitchen2 = ndb.TimeProperty()
+    end_time_kitchen = ndb.TimeProperty()
     end_time = ndb.TimeProperty()
     total_bowls = ndb.IntegerProperty()
     total_cups = ndb.IntegerProperty()
@@ -86,6 +95,24 @@ class Report(ndb.Model):
         return (self.get_dreams() is not None and
                 self.get_customers_today() is not None and
                 self.get_dreamers() is not None)
+
+    def get_end_time(self):
+        ''' Returns the max of all end-times. This is correct assuming
+        people don't finish past 1am. '''
+        if self.end_time is not None:
+            return self.end_time
+        elif (self.end_time_dishwasher is not None and
+            self.end_time_host is not None and
+            self.end_time_kitchen2 is not None and
+            self.end_time_kitchen is not None):
+            return max(
+                self.end_time_dishwasher,
+                self.end_time_host,
+                self.end_time_kitchen2,
+                self.end_time_kitchen,
+            )
+        else:
+            return None
 
     def get_achievement_rate(self):
         daily_dream_goal = self.get_daily_dream_goal()
@@ -189,6 +216,10 @@ class Report(ndb.Model):
         '''
         if old_report.year_goal: self.year_goal = old_report.year_goal
         if old_report.month_goal: self.month_goal = old_report.month_goal
+        if old_report.working_dishwasher: self.working_dishwasher = old_report.working_dishwasher
+        if old_report.working_host: self.working_host = old_report.working_host
+        if old_report.working_kitchen2: self.working_kitchen2 = old_report.working_kitchen2
+        if old_report.working_kitchen: self.working_kitchen = old_report.working_kitchen
         if old_report.working_members: self.working_members = old_report.working_members
         if old_report.supporting_members: self.supporting_members = old_report.supporting_members
         if old_report.visiting_members: self.visiting_members = old_report.visiting_members
@@ -206,6 +237,10 @@ class Report(ndb.Model):
         if old_report.dreamers is not None: self.dreamers = old_report.dreamers
         if old_report.lunch_dreamers is not None: self.lunch_dreamers = old_report.lunch_dreamers
         if old_report.dinner_dreamers is not None: self.dinner_dreamers = old_report.dinner_dreamers
+        if old_report.end_time_dishwasher is not None: self.end_time_dishwasher = old_report.end_time_dishwasher
+        if old_report.end_time_host is not None: self.end_time_host = old_report.end_time_host
+        if old_report.end_time_kitchen2 is not None: self.end_time_kitchen2 = old_report.end_time_kitchen2
+        if old_report.end_time_kitchen is not None: self.end_time_kitchen = old_report.end_time_kitchen
         if old_report.end_time is not None: self.end_time = old_report.end_time
         if old_report.total_bowls is not None: self.total_bowls = old_report.total_bowls
         if old_report.total_cups is not None: self.total_cups = old_report.total_cups

@@ -133,7 +133,14 @@
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
     <div class="textcenter">
-    {{ entry('Working members', 'working_members', class="longtextbox") }}
+    {{ entry('Dishwasher', 'working_dishwasher', class="shorttextbox") }}
+    {{ hspace() }}
+    {{ entry('Host', 'working_host', class="shorttextbox") }}
+    </div> 
+    <div class="textcenter">
+    {{ entry('Kitchen 2', 'working_kitchen2', class="shorttextbox") }}
+    {{ hspace() }}
+    {{ entry('Kitchen', 'working_kitchen', class="shorttextbox") }}
     </div> 
     <div class="textcenter">
     {{ entry('Supporting members', 'supporting_members', class="longtextbox") }}
@@ -146,13 +153,40 @@
 
     <div class="textcenter">
     {% if form %}
-    {{ entry("End time (hh:mm)", 'end_time', class="shorttextbox") }}
+    {{ entry("Dishwasher end time (hh:mm)", 'end_time_dishwasher', class="shorttextbox") }}
     {% else %}
-    {% if form or report and report['end_time'] %}
-    {{ entry("End time", "end_time") }}
+    {% if form or report and report['end_time_dishwasher'] %}
+    {{ entry("Dishwasher end time", "end_time_dishwasher") }}
+    {% endif %}
+    {% endif %}
+    {{ hspace() }}
+    {% if form %}
+    {{ entry("Host end time (hh:mm)", 'end_time_host', class="shorttextbox") }}
+    {% else %}
+    {% if form or report and report['end_time_host'] %}
+    {{ entry("Host end time", "end_time_host") }}
+    {% endif %}
+    {% endif %}
+    </div> 
+    <div class="textcenter">
+    {% if form %}
+    {{ entry("Kitchen 2 end time (hh:mm)", 'end_time_kitchen2', class="shorttextbox") }}
+    {% else %}
+    {% if form or report and report['end_time_kitchen2'] %}
+    {{ entry("Kitchen 2 end time", "end_time_kitchen2") }}
+    {% endif %}
+    {% endif %}
+    {{ hspace() }}
+    {% if form %}
+    {{ entry("Kitchen end time (hh:mm)", 'end_time_kitchen', class="shorttextbox") }}
+    {% else %}
+    {% if form or report and report['end_time_kitchen'] %}
+    {{ entry("Kitchen end time", "end_time_kitchen") }}
     {% endif %}
     {{ hspace() }}
     {% endif %}
+    </div> 
+    <div class="textcenter">
     {% if form or report and report['positive_cycle'] %}
     {{ entry("Positive cycle", "positive_cycle", type="number", class="shorttextbox", prefix="$") }}
     {% endif %}
@@ -179,7 +213,7 @@
     </div> 
 
     {% if not form %}
-    {% if form or report and report['end_time'] %}
+    {% if form or report and report['end_time_kitchen'] %}
     <div class="textcenter">
     {{ entry("Perfect money marathon days in a row", "perfect_money_marathon", type="number", class="shorttextbox") }}
     </div>
