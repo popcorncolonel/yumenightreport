@@ -281,6 +281,7 @@ def create_report_dict_from_report_obj(current_report):
         'working_host': current_report.working_host if current_report.working_host is not None else '',
         'working_kitchen2': current_report.working_kitchen2 if current_report.working_kitchen2 is not None else '',
         'working_kitchen': current_report.working_kitchen if current_report.working_kitchen is not None else '',
+        'working_members': current_report.working_members if current_report.working_members is not None else '',
         'supporting_members': current_report.supporting_members if current_report.supporting_members is not None else '',
         'visiting_members': current_report.visiting_members if current_report.visiting_members is not None else '',
         'end_time': current_report.get_end_time().strftime('%H:%M') if current_report.get_end_time() is not None else '',

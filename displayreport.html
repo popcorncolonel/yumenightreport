@@ -132,6 +132,11 @@
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
+    {% if not form and report and report['working_members'] %}
+    <div class="textcenter">
+    {{ entry("Working members", "working_members") }}
+    </div>
+    {% endif %}
     <div class="textcenter">
     {{ entry('Dishwasher', 'working_dishwasher', class="shorttextbox") }}
     {{ hspace() }}
@@ -151,6 +156,11 @@
 
     <hr style="margin-top: 20px; margin-bottom: 20px">
 
+    <div class="textcenter">
+    {% if not form and report and report['end_time'] %}
+    {{ entry("End time", "end_time") }}
+    {% endif %}
+    </div>
     <div class="textcenter">
     {% if form %}
     {{ entry("Dishwasher end time (hh:mm)", 'end_time_dishwasher', class="shorttextbox") }}
