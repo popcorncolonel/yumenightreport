@@ -217,12 +217,10 @@ def _populate_report_fields_from_request(report, request):
     date_string = request.get('date', '')
     end_time_dishwasher = request.get('end_time_dishwasher', '')
     end_time_host = request.get('end_time_host', '')
-    end_time_kitchen2 = request.get('end_time_kitchen2', '')
     end_time_kitchen = request.get('end_time_kitchen', '')
     report.date = get_date_obj(date_string)
     report.end_time_dishwasher = get_time_obj(end_time_dishwasher)
     report.end_time_host = get_time_obj(end_time_host)
-    report.end_time_kitchen2 = get_time_obj(end_time_kitchen2)
     report.end_time_kitchen = get_time_obj(end_time_kitchen)
 
     # They want to input lunch and total. So we compute dinner manually.
@@ -287,7 +285,6 @@ def create_report_dict_from_report_obj(current_report):
         'end_time': current_report.get_end_time().strftime('%H:%M') if current_report.get_end_time() is not None else '',
         'end_time_dishwasher': current_report.end_time_dishwasher.strftime('%H:%M') if current_report.end_time_dishwasher is not None else '',
         'end_time_host': current_report.end_time_host.strftime('%H:%M') if current_report.end_time_host is not None else '',
-        'end_time_kitchen2': current_report.end_time_kitchen2.strftime('%H:%M') if current_report.end_time_kitchen2 is not None else '',
         'end_time_kitchen': current_report.end_time_kitchen.strftime('%H:%M') if current_report.end_time_kitchen is not None else '',
         'positive_cycle': current_report.positive_cycle if current_report.positive_cycle is not None else '',
         'total_bowls': current_report.total_bowls if current_report.total_bowls is not None else '',
@@ -302,7 +299,7 @@ def create_report_dict_from_report_obj(current_report):
         'yearly_dream_goal': current_report.yearly_dream_goal or '',
         'customers_this_year': current_report.get_customers_this_year() if current_report.get_customers_this_year() is not None else '',
         'dreams_this_year': current_report.get_dreams_this_year() if current_report.get_dreams_this_year() is not None else '',
-        'dreamers_this_year': current_report.get_dreamers_this_year() or '',
+        'dreamers_this_year': current_report.get_dreamers_this_year() if current_report.get_dreamers_this_year() is not None else '',
         'perfect_money_marathon': current_report.get_perfect_money_marathon()  if current_report.get_perfect_money_marathon() is not None else  '',
         'achievement_rate': '{:.2f}%'.format(current_report.get_achievement_rate()) if \
                 current_report.get_achievement_rate() is not None else '',
@@ -424,7 +421,7 @@ class StatsHandler(webapp2.RequestHandler):
             else:
                 month_dict['average_dream_achievement_rate'] = 0.0
             month_dict['num_reports'] = month_dict['denom']
-            month_dict['month_string'] = datetime.datetime.strptime('2018-{:02d}-01'.format(i + 1), '%Y-%m-%d').strftime('%B'),
+            month_dict['month_string'] = datetime.datetime.strptime('2018-{:02d}-01'.format(i + 1), '%Y-%m-%d').strftime('%B')
 
     def _make_dict_for_month(self, month, reports_this_year):
         month_reports = [x for x in reports_this_year if x.date.month == month and x.is_finalized()]
@@ -524,6 +521,7 @@ class StatsHandler(webapp2.RequestHandler):
         template_values = {}
         template_values['goals'] = get_goals()
         template_values['monthly_stats_list'] = monthly_stats_list
+        '''
         weekly_lunch_stats_dict = self._make_weekly_dict(reports_this_year, 'lunch')
         weekly_dinner_stats_dict = self._make_weekly_dict(reports_this_year, 'dinner')
         weekly_lunch_stats_matrix = list(zip(
@@ -550,6 +548,7 @@ class StatsHandler(webapp2.RequestHandler):
             weekly_dinner_stats_matrix[i] = [x for x in week] + [total_customers]
         template_values['weekly_lunch_stats_matrix'] = weekly_lunch_stats_matrix
         template_values['weekly_dinner_stats_matrix'] = weekly_dinner_stats_matrix
+        '''
         template = JINJA_ENVIRONMENT.get_template('stats.html')
         self.response.write(template.render(template_values))
 

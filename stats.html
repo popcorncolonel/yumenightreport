@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="fixedwidthreport">
-    <a href="/dreamcalculator">Yume Dream Calculator</a> <span style="color: #f22">(新しい!)</span>
+    <a href="/dreamcalculator">Yume Dream Calculator</a>
     <hr>
     <strong>Total yearly dreams</strong>: <span> {{ goals.dreams_this_year }}</span>
     <br>
@@ -21,27 +21,18 @@
         <table>
         <tr>
             <th></th>
-            <th> Lunch dreams </th>
-            <th> Lunch dreamers </th>
-            <th> Lunch customers </th>
-            <th> Dinner dreams </th>
-            <th> Dinner dreamers </th>
-            <th> Dinner customers </th>
+            <th> Dreams </th>
+            <th> Dreamers </th>
+            <th> Customers </th>
         </tr>
         <tr>
             <td> <strong> Average </strong> </td>
-            <td> {{ stats_dict['average_lunch_dreams'] }} </td>
-            <td> {{ stats_dict['average_lunch_dreamers'] }} </td>
-            <td> {{ stats_dict['average_lunch_customers'] }} </td>
             <td> {{ stats_dict['average_dinner_dreams'] }} </td>
             <td> {{ stats_dict['average_dinner_dreamers'] }} </td>
             <td> {{ stats_dict['average_dinner_customers'] }} </td>
         </tr>
         <tr>
             <td> <strong> Total </strong> </td>
-            <td> {{ stats_dict['total_lunch_dreams'] }} </td>
-            <td> {{ stats_dict['total_lunch_dreamers'] }} </td>
-            <td> {{ stats_dict['total_lunch_customers'] }} </td>
             <td> {{ stats_dict['total_dinner_dreams'] }} </td>
             <td> {{ stats_dict['total_dinner_dreamers'] }} </td>
             <td> {{ stats_dict['total_dinner_customers'] }} </td>
@@ -52,6 +43,7 @@
         <div> <strong>Average dream achievement rate</strong>: {{ stats_dict['average_dream_achievement_rate'] }}% </div>
     {% endfor %}
 
+    {#
     <br>
     <hr>
     <br>
@@ -104,6 +96,7 @@
     </tr>
     {% endfor %}
     </table>
+    #}
 
 </div>
 {% endblock %}

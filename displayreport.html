@@ -89,6 +89,9 @@
     {{ entry('Dreams this year', 'dreams_this_year', class="shorttextbox") }}
     </div> 
     <div class="textcenter">
+    {{ entry('Dreamers this year', 'dreamers_this_year', class="shorttextbox") }}
+    </div> 
+    <div class="textcenter">
     {{ entry('Dream achievement rate', 'achievement_rate', class="shorttextbox") }}
     </div> 
     {% if 'dreamers' in report and report['dreamers'] and 'customers_today' in report and report['customers_today'] %}
@@ -180,23 +183,13 @@
     </div> 
     <div class="textcenter">
     {% if form %}
-    {{ entry("Kitchen 2 end time (hh:mm)", 'end_time_kitchen2', class="shorttextbox") }}
-    {% else %}
-    {% if form or report and report['end_time_kitchen2'] %}
-    {{ entry("Kitchen 2 end time", "end_time_kitchen2") }}
-    {% endif %}
-    {% endif %}
-    {{ hspace() }}
-    {% if form %}
     {{ entry("Kitchen end time (hh:mm)", 'end_time_kitchen', class="shorttextbox") }}
     {% else %}
     {% if form or report and report['end_time_kitchen'] %}
     {{ entry("Kitchen end time", "end_time_kitchen") }}
     {% endif %}
-    {{ hspace() }}
     {% endif %}
-    </div> 
-    <div class="textcenter">
+    {{ hspace() }}
     {% if form or report and report['positive_cycle'] %}
     {{ entry("Positive cycle", "positive_cycle", type="number", class="shorttextbox", prefix="$") }}
     {% endif %}

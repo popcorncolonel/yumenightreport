@@ -44,7 +44,6 @@ class Report(ndb.Model):
     visiting_members = ndb.StringProperty()
     end_time_dishwasher = ndb.TimeProperty()
     end_time_host = ndb.TimeProperty()
-    end_time_kitchen2 = ndb.TimeProperty()
     end_time_kitchen = ndb.TimeProperty()
     end_time = ndb.TimeProperty()
     total_bowls = ndb.IntegerProperty()
@@ -103,12 +102,10 @@ class Report(ndb.Model):
             return self.end_time
         elif (self.end_time_dishwasher is not None and
             self.end_time_host is not None and
-            self.end_time_kitchen2 is not None and
             self.end_time_kitchen is not None):
             return max(
                 self.end_time_dishwasher,
                 self.end_time_host,
-                self.end_time_kitchen2,
                 self.end_time_kitchen,
             )
         else:
@@ -239,7 +236,6 @@ class Report(ndb.Model):
         if old_report.dinner_dreamers is not None: self.dinner_dreamers = old_report.dinner_dreamers
         if old_report.end_time_dishwasher is not None: self.end_time_dishwasher = old_report.end_time_dishwasher
         if old_report.end_time_host is not None: self.end_time_host = old_report.end_time_host
-        if old_report.end_time_kitchen2 is not None: self.end_time_kitchen2 = old_report.end_time_kitchen2
         if old_report.end_time_kitchen is not None: self.end_time_kitchen = old_report.end_time_kitchen
         if old_report.end_time is not None: self.end_time = old_report.end_time
         if old_report.total_bowls is not None: self.total_bowls = old_report.total_bowls

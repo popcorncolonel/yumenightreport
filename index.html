@@ -32,7 +32,7 @@
         <ul>
         {% for report in reports %} {# assumes list is sorted #}
         <li>
-            <a href="/report/{{ report.date_string }}">{{ report.readable_date_string }} ({{ report.dreams }} dreams,
+            <a href="/report/{{ report.date_string }}">{{ report.readable_date_string }} ({{ report.customers_today }} customers, {{ report.dreams }} dreams,
  {{ report.dreamers }} dreamers{% if report.get_end_time() %}, {{ report.get_end_time().strftime("%H:%M") }} end time{% endif %})</a>
         </li>
         {% endfor %}
